@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using LanceServer.Core.Configuration;
 using LanceServer.Core.Document;
 using LanceServer.Parser;
@@ -215,20 +215,24 @@ public class Workspace : IWorkspace
         documentUris = documentUris.Select(GetDocument).OrderBy(document => document.Information.DocumentType).Select(document => document.Information.Uri).ToList();
 
         var maxCount = documentUris.Count;
-        double currentCount = 0;
+        var currentCount = 0;
+        var lockObject = new object();
 
         var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = MAX_PARALLEL };
         Parallel.ForEach(documentUris, parallelOptions, uri => 
         {
             GetSymbolisedDocument(uri);
-            currentCount++;
             
-            progress.Report(new WorkDoneProgressReport
+            lock (lockObject)
             {
-                Kind = "report",
-                Message = $"{currentCount}/{maxCount} {uri.LocalPath}",
-                Percentage = (uint)Math.Floor(currentCount / maxCount * 100)
-            });
+                currentCount++;
+                progress.Report(new WorkDoneProgressReport
+                {
+                    Kind = "report",
+                    Message = $"{currentCount}/{maxCount} {uri.LocalPath}",
+                    Percentage = (uint)Math.Floor((double)currentCount / maxCount * 100)
+                });
+            }
         });
         
         IsWorkspaceInitialised = true;
