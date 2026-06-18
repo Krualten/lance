@@ -753,6 +753,16 @@ public interface ISinumerikNCListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitIsoCall([NotNull] SinumerikNCParser.IsoCallContext context);
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="SinumerikNCParser.pcallPath"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterPcallPath([NotNull] SinumerikNCParser.PcallPathContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="SinumerikNCParser.pcallPath"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitPcallPath([NotNull] SinumerikNCParser.PcallPathContext context);
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="SinumerikNCParser.returnStatement"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>

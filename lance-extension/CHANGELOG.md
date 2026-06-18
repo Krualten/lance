@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - added static `ISOCALL` resolution and made explicit program paths strict.
 - added static `EXTCALL` resolution for external programs represented in the workspace.
 - resolved optional programs and label variables in `CALL ... BLOCK ... TO ...`.
+- parsed and resolved path-qualified `PCALL` calls with parameter transfer and strict NC paths.
 
 ## [1.0.1] - 2023-06-03
 

@@ -25,6 +25,8 @@ public class SinumerikProgramReferenceTest
     [DataRow("TEST_HELPER", "TEST_HELPER")]
     [DataRow("TEST_HELPER.SPF", "TEST_HELPER")]
     [DataRow("_N_TEST_HELPER_SPF", "TEST_HELPER")]
+    [DataRow("TEST_HELPER.CYC", "TEST_HELPER")]
+    [DataRow("_N_TEST_HELPER_CPF", "TEST_HELPER")]
     public void ParsesProgramNameVariants(string reference, string expectedIdentifier)
     {
         var success = SinumerikProgramReference.TryParse(

@@ -35,6 +35,12 @@ public class ProcedureUse : AbstractSymbolUse
     /// File extension explicitly encoded in an NC program reference, if any.
     /// </summary>
     public string? ExplicitFileExtension { get; }
+
+    /// <summary>
+    /// Whether this call form transfers parameters without requiring an EXTERN declaration.
+    /// Canonical absolute PCALL references have this behavior.
+    /// </summary>
+    public bool SupportsParameterTransferWithoutExtern { get; }
     
     public ProcedureUse(
         string identifier,
@@ -43,7 +49,8 @@ public class ProcedureUse : AbstractSymbolUse
         ProcedureUseArgument[] arguments,
         string? callPath = null,
         string? explicitDirectoryPath = null,
-        string? explicitFileExtension = null)
+        string? explicitFileExtension = null,
+        bool supportsParameterTransferWithoutExtern = false)
     {
         Identifier = identifier;
         Range = range;
@@ -52,5 +59,6 @@ public class ProcedureUse : AbstractSymbolUse
         CallPath = callPath;
         ExplicitDirectoryPath = explicitDirectoryPath;
         ExplicitFileExtension = explicitFileExtension;
+        SupportsParameterTransferWithoutExtern = supportsParameterTransferWithoutExtern;
     }
 }

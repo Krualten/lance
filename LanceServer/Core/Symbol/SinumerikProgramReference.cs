@@ -58,7 +58,7 @@ public static class SinumerikProgramReference
             normalized = normalized[3..];
         }
 
-        foreach (var suffix in new[] { "_SPF", "_MPF", ".SPF", ".MPF" })
+        foreach (var suffix in new[] { "_SPF", "_MPF", "_CYC", "_CPF", ".SPF", ".MPF", ".CYC", ".CPF" })
         {
             if (normalized.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
             {

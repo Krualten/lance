@@ -462,6 +462,12 @@ public interface ISinumerikNCVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitIsoCall([NotNull] SinumerikNCParser.IsoCallContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="SinumerikNCParser.pcallPath"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitPcallPath([NotNull] SinumerikNCParser.PcallPathContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="SinumerikNCParser.returnStatement"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>

@@ -32,6 +32,7 @@ public class DiagnosticHandler : IDiagnosticHandler
                     {
                         if (procedureSymbol.MayNeedExternDeclaration
                             && procedureUse.Arguments.Any()
+                            && !procedureUse.SupportsParameterTransferWithoutExtern
                             && !symbolUses.Any(symbolUse2 => symbolUse2 is DeclarationProcedureUse && symbolUse2.IsReferencedBy(symbolUse.Identifier)))
                         {
                             diagnostics.Add(DiagnosticMessage.MissingExtern(procedureUse));

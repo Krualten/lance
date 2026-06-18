@@ -65,6 +65,11 @@ public class SymbolUseListener : SinumerikNCBaseListener
     /// </summary>
     public override void ExitOwnProcedure(SinumerikNCParser.OwnProcedureContext context)
     {
+        if (context.Parent is SinumerikNCParser.ProcedureCallContext)
+        {
+            return;
+        }
+
         var name = context.NAME();
         if (name == null) return;
 
@@ -82,6 +87,51 @@ public class SymbolUseListener : SinumerikNCBaseListener
             _document.Information.Uri,
             arguments,
             _activeCallPath));
+    }
+
+    /// <summary>
+    /// Creates a procedure reference for PCALL, preserving its absolute NC directory,
+    /// optional file identifier and parameter list.
+    /// </summary>
+    public override void ExitProcedureCall(SinumerikNCParser.ProcedureCallContext context)
+    {
+        var procedure = context.program;
+        var name = procedure?.NAME();
+        if (name == null)
+        {
+            return;
+        }
+
+        var token = name.Symbol;
+        if (_document.PlaceholderTable.ContainedPlaceholder(token.Text))
+        {
+            return;
+        }
+
+        var path = context.pcallDirectory?.GetText();
+        if (!SinumerikProgramReference.TryParse(
+                (path ?? string.Empty) + token.Text,
+                out var identifier,
+                out var explicitDirectoryPath,
+                out var explicitFileExtension))
+        {
+            return;
+        }
+
+        var arguments = procedure!.arguments() != null
+            ? procedure.arguments().expression().Select(_ => new ProcedureUseArgument()).ToArray()
+            : Array.Empty<ProcedureUseArgument>();
+        var canonicalAbsoluteCall = path != null && !HasExplicitProgramFileIdentifier(token.Text);
+
+        SymbolUseTable.Add(new ProcedureUse(
+            identifier,
+            ParserHelper.GetRangeForToken(token),
+            _document.Information.Uri,
+            arguments,
+            _activeCallPath,
+            explicitDirectoryPath,
+            explicitFileExtension,
+            canonicalAbsoluteCall));
     }
 
     /// <summary>
@@ -217,8 +267,11 @@ public class SymbolUseListener : SinumerikNCBaseListener
         }
 
         var arguments = context.parameterDeclarations() != null ? context.parameterDeclarations().parameterDeclaration().Select(_ => new ProcedureUseArgument()).ToArray() : Array.Empty<ProcedureUseArgument>();
-        
-        SymbolUseTable.Add(new DeclarationProcedureUse(token.Text, ParserHelper.GetRangeForToken(token), _document.Information.Uri, arguments));
+        var identifier = SinumerikProgramReference.TryParse(token.Text, out var normalizedIdentifier, out _)
+            ? normalizedIdentifier
+            : token.Text;
+
+        SymbolUseTable.Add(new DeclarationProcedureUse(identifier, ParserHelper.GetRangeForToken(token), _document.Information.Uri, arguments));
     }
 
     /// <summary>
@@ -279,5 +332,16 @@ public class SymbolUseListener : SinumerikNCBaseListener
 
         value = text[1..^1];
         return true;
+    }
+
+    private static bool HasExplicitProgramFileIdentifier(string programName)
+    {
+        if (!programName.StartsWith("_N_", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return new[] { "_SPF", "_MPF", "_CYC", "_CPF" }.Any(suffix =>
+            programName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
     }
 }

@@ -305,6 +305,70 @@ MCALL
     }
 
     [TestMethod]
+    public void AbsolutePcallCreatesSingleProcedureUseWithPathAndParameters()
+    {
+        var code = @"PCALL/_N_WKS_DIR/_N_LIBRARY_WPD/TEST_HELPER(mainAxis, mainPos)" + Environment.NewLine;
+        var symbolUses = GetSymbolUses(code, out var parserDiagnostics);
+        var procedureUse = symbolUses.OfType<ProcedureUse>().Single();
+
+        Assert.AreEqual(
+            0,
+            parserDiagnostics.Count,
+            string.Join(Environment.NewLine, parserDiagnostics.Select(diagnostic => diagnostic.Message)));
+        Assert.AreEqual("TEST_HELPER", procedureUse.Identifier);
+        Assert.AreEqual("/_N_WKS_DIR/_N_LIBRARY_WPD", procedureUse.ExplicitDirectoryPath);
+        Assert.IsNull(procedureUse.ExplicitFileExtension);
+        Assert.AreEqual(2, procedureUse.Arguments.Length);
+        Assert.IsTrue(procedureUse.SupportsParameterTransferWithoutExtern);
+    }
+
+    [TestMethod]
+    public void PcallWithoutPathBehavesLikeStandardProcedureCall()
+    {
+        var code = @"PCALL TEST_HELPER(mainAxis)" + Environment.NewLine;
+        var symbolUses = GetSymbolUses(code, out var parserDiagnostics);
+        var procedureUse = symbolUses.OfType<ProcedureUse>().Single();
+
+        Assert.AreEqual(0, parserDiagnostics.Count);
+        Assert.AreEqual("TEST_HELPER", procedureUse.Identifier);
+        Assert.IsNull(procedureUse.ExplicitDirectoryPath);
+        Assert.AreEqual(1, procedureUse.Arguments.Length);
+        Assert.IsFalse(procedureUse.SupportsParameterTransferWithoutExtern);
+    }
+
+    [TestMethod]
+    public void PcallWithExplicitNcFileIdentifierPreservesExtensionAndExternRequirement()
+    {
+        var code = @"PCALL/_N_WKS_DIR/_N_LIBRARY_WPD/_N_TEST_HELPER_CYC(mainAxis)" + Environment.NewLine;
+        var symbolUses = GetSymbolUses(code, out var parserDiagnostics);
+        var procedureUse = symbolUses.OfType<ProcedureUse>().Single();
+
+        Assert.AreEqual(0, parserDiagnostics.Count);
+        Assert.AreEqual("TEST_HELPER", procedureUse.Identifier);
+        Assert.AreEqual("/_N_WKS_DIR/_N_LIBRARY_WPD", procedureUse.ExplicitDirectoryPath);
+        Assert.AreEqual(".cyc", procedureUse.ExplicitFileExtension);
+        Assert.IsFalse(procedureUse.SupportsParameterTransferWithoutExtern);
+    }
+
+    [TestMethod]
+    public void ExplicitNcFileIdentifierAndExternDeclarationShareNormalizedName()
+    {
+        var code =
+            @"EXTERN _N_TEST_HELPER_SPF(INT)
+PCALL/_N_WKS_DIR/_N_LIBRARY_WPD/_N_TEST_HELPER_SPF(mainAxis)
+";
+        var symbolUses = GetSymbolUses(code, out var parserDiagnostics);
+
+        Assert.AreEqual(0, parserDiagnostics.Count);
+        Assert.AreEqual(
+            "TEST_HELPER",
+            symbolUses.OfType<DeclarationProcedureUse>().Single().Identifier);
+        Assert.AreEqual(
+            "TEST_HELPER",
+            symbolUses.OfType<ProcedureUse>().Single().Identifier);
+    }
+
+    [TestMethod]
     public void LiteralIsoCallCreatesProcedureUseWithExplicitPath()
     {
         var code = @"ISOCALL ""/_N_WKS_DIR/_N_LIBRARY_WPD/_N_ISO_HELPER_SPF""" + Environment.NewLine;

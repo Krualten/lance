@@ -111,6 +111,110 @@ ENDPROC
     }
 
     [TestMethod]
+    public void AbsolutePcallResolvesStrictPathAndTransfersParametersWithoutExtern()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "lance-pcall-" + Guid.NewGuid());
+        var mainDirectory = Path.Combine(directory, "WKS.DIR", "MAIN.WPD");
+        var libraryDirectory = Path.Combine(directory, "WKS.DIR", "LIBRARY.WPD");
+        Directory.CreateDirectory(mainDirectory);
+        Directory.CreateDirectory(libraryDirectory);
+        var localHelperPath = Path.Combine(mainDirectory, "TEST_HELPER.SPF");
+        var libraryHelperPath = Path.Combine(libraryDirectory, "TEST_HELPER.SPF");
+        var mainPath = Path.Combine(mainDirectory, "TEST_MAIN.MPF");
+        var helperCode =
+            "PROC TEST_HELPER(INT axisNo, REAL targetPos)" + Environment.NewLine +
+            "RET" + Environment.NewLine +
+            "ENDPROC";
+        File.WriteAllText(localHelperPath, helperCode);
+        File.WriteAllText(libraryHelperPath, helperCode);
+        File.WriteAllText(
+            mainPath,
+            @"PROC TEST_MAIN()
+DEF INT mainAxis
+DEF REAL mainPos
+PCALL/_N_WKS_DIR/_N_LIBRARY_WPD/TEST_HELPER(mainAxis, mainPos)
+RET
+ENDPROC
+");
+
+        try
+        {
+            var configurationManager = CreateConfigurationManager();
+            var workspace = new Workspace(
+                new ParserManager(),
+                new PlaceholderPreprocessor(configurationManager),
+                configurationManager);
+            workspace.GetSymbolisedDocument(new Uri(localHelperPath));
+            var libraryUri = new Uri(libraryHelperPath);
+            workspace.GetSymbolisedDocument(libraryUri);
+            var mainDocument = workspace.GetSymbolUseExtractedDocument(new Uri(mainPath));
+            var procedureUse = mainDocument.SymbolUseTable.GetAll().OfType<ProcedureUse>().Single();
+
+            var resolvedProcedure = workspace.GetSymbols(procedureUse).OfType<ProcedureSymbol>().Single();
+            var diagnostics = new DiagnosticHandler().HandleRequest(mainDocument, workspace).Items;
+
+            Assert.AreEqual(
+                0,
+                mainDocument.ParserDiagnostics.Count,
+                string.Join(Environment.NewLine, mainDocument.ParserDiagnostics.Select(diagnostic => diagnostic.Message)));
+            Assert.AreEqual(libraryUri, resolvedProcedure.SourceDocument);
+            Assert.IsFalse(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.StartsWith("Missing extern declaration", StringComparison.Ordinal)));
+            Assert.IsFalse(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.Equals("Cannot resolve symbol TEST_HELPER.", StringComparison.Ordinal)));
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [TestMethod]
+    public void MissingAbsolutePcallPathDoesNotResolveLocalHomonym()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "lance-pcall-missing-" + Guid.NewGuid());
+        var mainDirectory = Path.Combine(directory, "WKS.DIR", "MAIN.WPD");
+        Directory.CreateDirectory(mainDirectory);
+        var localHelperPath = Path.Combine(mainDirectory, "TEST_HELPER.SPF");
+        var mainPath = Path.Combine(mainDirectory, "TEST_MAIN.MPF");
+        File.WriteAllText(
+            localHelperPath,
+            "PROC TEST_HELPER(INT value)" + Environment.NewLine + "RET" + Environment.NewLine + "ENDPROC");
+        File.WriteAllText(
+            mainPath,
+            @"PROC TEST_MAIN()
+DEF INT value
+PCALL/_N_WKS_DIR/_N_MISSING_WPD/TEST_HELPER(value)
+RET
+ENDPROC
+");
+
+        try
+        {
+            var configurationManager = CreateConfigurationManager();
+            var workspace = new Workspace(
+                new ParserManager(),
+                new PlaceholderPreprocessor(configurationManager),
+                configurationManager);
+            workspace.GetSymbolisedDocument(new Uri(localHelperPath));
+            var mainDocument = workspace.GetSymbolUseExtractedDocument(new Uri(mainPath));
+
+            var diagnostics = new DiagnosticHandler().HandleRequest(mainDocument, workspace).Items;
+
+            Assert.AreEqual(0, mainDocument.ParserDiagnostics.Count);
+            Assert.IsTrue(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.Equals("Cannot resolve symbol TEST_HELPER.", StringComparison.Ordinal)));
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [TestMethod]
     public void ModalManufacturerCycleCallWithParametersResolvesWithoutExtern()
     {
         var directory = Path.Combine(Path.GetTempPath(), "lance-mcall-" + Guid.NewGuid());

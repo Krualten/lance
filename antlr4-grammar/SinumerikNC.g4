@@ -1020,12 +1020,14 @@ gotoTarget
 
 callStatement
     : CALL (expression | program=primaryExpression? CALL_BLOCK startLabel=primaryExpression TO endLabel=primaryExpression) #call
-    | CALL_P primaryExpression ownProcedure?                                            #procedureCall
+    | CALL_P pcallDirectory=pcallPath? program=ownProcedure                             #procedureCall
     | CALL_EXT OPEN_PAREN expression CLOSE_PAREN                                        #externalCall
     | CALL_PATH OPEN_PAREN expression? CLOSE_PAREN                                      #callPath
     | CALL_MODAL (NAME arguments?)?                                                     #modalCall
     | ISOCALL expression                                                                #isoCall
     ;
+
+pcallPath: (SLASH NAME)+ SLASH;
 
 returnStatement: RETURN (OPEN_PAREN expression (COMMA expression?)? (COMMA expression?)? (COMMA expression)? CLOSE_PAREN)?;
 
