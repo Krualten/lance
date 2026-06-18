@@ -360,4 +360,61 @@ MCALL
         Assert.AreEqual(0, symbolUses.OfType<ProcedureUse>().Count());
         Assert.IsTrue(symbolUses.Any(use => use is SymbolUse && use.Identifier == "programName"));
     }
+
+    [TestMethod]
+    public void LiteralExternalCallCreatesProcedureUseWithPath()
+    {
+        var code = @"EXTCALL(""external/programs/EXT_HELPER.SPF"")" + Environment.NewLine;
+        var preprocessedDocument = new PreprocessedDocument(
+            new DocumentInformationMock(new Uri("file:///MAIN.MPF"), ".mpf", DocumentType.MainProcedure),
+            code,
+            code,
+            new PlaceholderTable(new Dictionary<string, string>()),
+            "");
+        var parserManager = new ParserManager();
+        var parserResult = parserManager.Parse(preprocessedDocument);
+        var parsedDocument = new ParsedDocument(
+            preprocessedDocument,
+            parserResult.ParseTree,
+            parserResult.Diagnostics);
+        var symbolisedDocument = new SymbolisedDocument(parsedDocument, new SymbolTable());
+
+        var procedureUse = parserManager
+            .GetSymbolUseForDocument(symbolisedDocument)
+            .OfType<ProcedureUse>()
+            .Single();
+
+        Assert.AreEqual(
+            0,
+            parserResult.Diagnostics.Count,
+            string.Join(Environment.NewLine, parserResult.Diagnostics.Select(diagnostic => diagnostic.Message)));
+        Assert.AreEqual("EXT_HELPER", procedureUse.Identifier);
+        Assert.AreEqual("/external/programs", procedureUse.ExplicitDirectoryPath);
+        Assert.AreEqual(".spf", procedureUse.ExplicitFileExtension);
+    }
+
+    [TestMethod]
+    public void VariableExternalCallRemainsDynamicVariableUse()
+    {
+        var code = @"EXTCALL(externalProgram)" + Environment.NewLine;
+        var preprocessedDocument = new PreprocessedDocument(
+            new DocumentInformationMock(new Uri("file:///MAIN.MPF"), ".mpf", DocumentType.MainProcedure),
+            code,
+            code,
+            new PlaceholderTable(new Dictionary<string, string>()),
+            "");
+        var parserManager = new ParserManager();
+        var parserResult = parserManager.Parse(preprocessedDocument);
+        var parsedDocument = new ParsedDocument(
+            preprocessedDocument,
+            parserResult.ParseTree,
+            parserResult.Diagnostics);
+        var symbolisedDocument = new SymbolisedDocument(parsedDocument, new SymbolTable());
+
+        var symbolUses = parserManager.GetSymbolUseForDocument(symbolisedDocument).ToList();
+
+        Assert.AreEqual(0, parserResult.Diagnostics.Count);
+        Assert.AreEqual(0, symbolUses.OfType<ProcedureUse>().Count());
+        Assert.IsTrue(symbolUses.Any(use => use is SymbolUse && use.Identifier == "externalProgram"));
+    }
 }

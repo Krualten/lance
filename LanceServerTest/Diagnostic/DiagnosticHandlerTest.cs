@@ -258,6 +258,96 @@ ENDPROC
         }
     }
 
+    [TestMethod]
+    public void LiteralExternalCallResolvesWorkspaceFileByRelativePath()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "lance-extcall-" + Guid.NewGuid());
+        var mainDirectory = Path.Combine(directory, "programs");
+        var externalDirectory = Path.Combine(directory, "external", "programs");
+        Directory.CreateDirectory(mainDirectory);
+        Directory.CreateDirectory(externalDirectory);
+        var localHelperPath = Path.Combine(mainDirectory, "EXT_HELPER.SPF");
+        var externalHelperPath = Path.Combine(externalDirectory, "EXT_HELPER.SPF");
+        var mainPath = Path.Combine(mainDirectory, "TEST_MAIN.MPF");
+        var helperCode = "PROC EXT_HELPER()" + Environment.NewLine + "RET" + Environment.NewLine + "ENDPROC";
+        File.WriteAllText(localHelperPath, helperCode);
+        File.WriteAllText(externalHelperPath, helperCode);
+        File.WriteAllText(
+            mainPath,
+            @"PROC TEST_MAIN()
+EXTCALL(""external/programs/EXT_HELPER.SPF"")
+RET
+ENDPROC
+");
+
+        try
+        {
+            var configurationManager = CreateConfigurationManager();
+            var workspace = new Workspace(
+                new ParserManager(),
+                new PlaceholderPreprocessor(configurationManager),
+                configurationManager);
+            workspace.GetSymbolisedDocument(new Uri(localHelperPath));
+            var externalHelperUri = new Uri(externalHelperPath);
+            workspace.GetSymbolisedDocument(externalHelperUri);
+            var mainDocument = workspace.GetSymbolUseExtractedDocument(new Uri(mainPath));
+            var procedureUse = mainDocument.SymbolUseTable.GetAll().OfType<ProcedureUse>().Single();
+
+            var resolvedProcedures = workspace.GetSymbols(procedureUse).OfType<ProcedureSymbol>().ToList();
+            var diagnostics = new DiagnosticHandler().HandleRequest(mainDocument, workspace).Items;
+
+            Assert.AreEqual(1, resolvedProcedures.Count);
+            Assert.AreEqual(externalHelperUri, resolvedProcedures[0].SourceDocument);
+            Assert.IsFalse(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.Equals("Cannot resolve symbol EXT_HELPER.", StringComparison.Ordinal)));
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [TestMethod]
+    public void MissingLiteralExternalPathDoesNotResolveLocalHomonym()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "lance-extcall-missing-" + Guid.NewGuid());
+        Directory.CreateDirectory(directory);
+        var localHelperPath = Path.Combine(directory, "EXT_HELPER.SPF");
+        var mainPath = Path.Combine(directory, "TEST_MAIN.MPF");
+        File.WriteAllText(
+            localHelperPath,
+            "PROC EXT_HELPER()" + Environment.NewLine + "RET" + Environment.NewLine + "ENDPROC");
+        File.WriteAllText(
+            mainPath,
+            @"PROC TEST_MAIN()
+EXTCALL(""missing/EXT_HELPER.SPF"")
+RET
+ENDPROC
+");
+
+        try
+        {
+            var configurationManager = CreateConfigurationManager();
+            var workspace = new Workspace(
+                new ParserManager(),
+                new PlaceholderPreprocessor(configurationManager),
+                configurationManager);
+            workspace.GetSymbolisedDocument(new Uri(localHelperPath));
+            var mainDocument = workspace.GetSymbolUseExtractedDocument(new Uri(mainPath));
+
+            var diagnostics = new DiagnosticHandler().HandleRequest(mainDocument, workspace).Items;
+
+            Assert.IsTrue(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.Equals("Cannot resolve symbol EXT_HELPER.", StringComparison.Ordinal)));
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
     [DataTestMethod]
     [DataRow("cus.dir")]
     [DataRow("cma.dir")]

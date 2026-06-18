@@ -129,6 +129,15 @@ public class SymbolUseListener : SinumerikNCBaseListener
         AddLiteralProgramUse(context.expression());
     }
 
+    /// <summary>
+    /// Resolves literal external program calls when the referenced file is represented in
+    /// the workspace. Variable-based external paths remain ordinary variable uses.
+    /// </summary>
+    public override void ExitExternalCall(SinumerikNCParser.ExternalCallContext context)
+    {
+        AddLiteralProgramUse(context.expression());
+    }
+
     private void AddLiteralProgramUse(SinumerikNCParser.ExpressionContext expression)
     {
         if (!TryGetStringLiteral(expression.GetText(), out var programReference)
