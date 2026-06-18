@@ -148,7 +148,7 @@ internal static class Program
         var docConfigPath = Path.Join(basePath, "language_token_documentation.json");
         var docConfig = JsonConvert.DeserializeObject<DocumentationConfiguration>(FileUtil.ReadFileContent(docConfigPath)) 
                         ?? throw new FileNotFoundException(docConfigPath + " not found");
-        var serverConfigPath = configFileInfo.Name;
+        var serverConfigPath = configFileInfo.FullName;
         var serverConfig = JsonConvert.DeserializeObject<ServerConfiguration>(FileUtil.ReadFileContent(serverConfigPath)) 
                            ?? throw new FileNotFoundException(serverConfigPath + " not found");
 
