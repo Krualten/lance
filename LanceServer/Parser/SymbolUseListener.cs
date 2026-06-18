@@ -1,4 +1,5 @@
-﻿using Antlr4.Runtime;
+using Antlr4.Runtime;
+using Antlr4.Runtime.Tree;
 using LanceServer.Core.Document;
 using LanceServer.Core.Symbol;
 
@@ -27,7 +28,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
     /// </summary>
     public override void ExitUserVariableAssignment(SinumerikNCParser.UserVariableAssignmentContext context)
     {
-        AddTokenIfNotPlaceholder(context.NAME().Symbol);
+        AddNameIfNotPlaceholder(context.NAME());
     }
 
     /// <summary>
@@ -36,7 +37,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
     /// </summary>
     public override void ExitArrayVariableAssignment(SinumerikNCParser.ArrayVariableAssignmentContext context)
     {
-        AddTokenIfNotPlaceholder(context.NAME().Symbol);
+        AddNameIfNotPlaceholder(context.NAME());
     }
 
     /// <summary>
@@ -45,7 +46,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
     /// </summary>
     public override void ExitVariableUse(SinumerikNCParser.VariableUseContext context)
     {
-        AddTokenIfNotPlaceholder(context.NAME().Symbol);
+        AddNameIfNotPlaceholder(context.NAME());
     }
 
     /// <summary>
@@ -54,7 +55,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
     /// </summary>
     public override void ExitMacroUse(SinumerikNCParser.MacroUseContext context)
     {
-        AddTokenIfNotPlaceholder(context.NAME().Symbol);
+        AddNameIfNotPlaceholder(context.NAME());
     }
 
     /// <summary>
@@ -63,7 +64,10 @@ public class SymbolUseListener : SinumerikNCBaseListener
     /// </summary>
     public override void ExitOwnProcedure(SinumerikNCParser.OwnProcedureContext context)
     {
-        var token = context.NAME().Symbol;
+        var name = context.NAME();
+        if (name == null) return;
+
+        var token = name.Symbol;
         if (_document.PlaceholderTable.ContainedPlaceholder(token.Text))
         {
             return;
@@ -80,7 +84,10 @@ public class SymbolUseListener : SinumerikNCBaseListener
     /// </summary>
     public override void ExitProcedureDeclaration(SinumerikNCParser.ProcedureDeclarationContext context)
     {
-        var token = context.NAME().Symbol;
+        var name = context.NAME();
+        if (name == null) return;
+
+        var token = name.Symbol;
         if (_document.PlaceholderTable.ContainedPlaceholder(token.Text))
         {
             return;
@@ -97,7 +104,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
     /// </summary>
     public override void ExitGotoLabel(SinumerikNCParser.GotoLabelContext context)
     {
-        AddTokenIfNotPlaceholder(context.NAME().Symbol);
+        AddNameIfNotPlaceholder(context.NAME());
     }
 
     /// <summary>
@@ -117,5 +124,15 @@ public class SymbolUseListener : SinumerikNCBaseListener
         }
         
         SymbolUseTable.Add(new SymbolUse(token.Text, ParserHelper.GetRangeForToken(token), _document.Information.Uri));
+    }
+
+    private void AddNameIfNotPlaceholder(ITerminalNode? name)
+    {
+        if (name == null)
+        {
+            return;
+        }
+
+        AddTokenIfNotPlaceholder(name.Symbol);
     }
 }

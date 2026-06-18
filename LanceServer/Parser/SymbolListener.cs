@@ -39,10 +39,13 @@ public class SymbolListener : SinumerikNCBaseListener
     {
         if (context.exception != null) return;
 
-        var identifier = context.NAME()?.GetText() ?? string.Empty;
+        var name = context.NAME();
+        if (name == null) return;
+
+        var identifier = name.GetText();
         var uri = _document.Information.Uri;
         var symbolRange = ParserHelper.GetRangeFromStartToEndToken(context.Start, context.Stop);
-        var identifierRange = ParserHelper.GetRangeForToken(context.NAME().Symbol);
+        var identifierRange = ParserHelper.GetRangeForToken(name.Symbol);
         var success = GetCompositeDataType(context.type(), out var dataType);
         var arrayDeclaration = GetArrayDeclaration(context.arrayDeclaration());
 
@@ -64,10 +67,13 @@ public class SymbolListener : SinumerikNCBaseListener
     {
         if (context.exception != null) return;
 
-        var identifier = context.NAME()?.GetText() ?? string.Empty;
+        var name = context.NAME();
+        if (name == null) return;
+
+        var identifier = name.GetText();
         var uri = _document.Information.Uri;
         var symbolRange = ParserHelper.GetRangeFromStartToEndToken(context.Start, context.Stop);
-        var identifierRange = ParserHelper.GetRangeForToken(context.NAME().Symbol);
+        var identifierRange = ParserHelper.GetRangeForToken(name.Symbol);
         const bool IS_REFERENCE_VALUE = false;
         var isOptional = context.defaultValue != null;
         
@@ -91,10 +97,13 @@ public class SymbolListener : SinumerikNCBaseListener
     {
         if (context.exception != null) return;
 
-        var identifier = ReplacePlaceholder(context.NAME()?.GetText() ?? string.Empty);
+        var name = context.NAME();
+        if (name == null) return;
+
+        var identifier = ReplacePlaceholder(name.GetText());
         var uri = _document.Information.Uri;
         var symbolRange = ParserHelper.GetRangeFromStartToEndToken(context.Start, context.Stop);
-        var identifierRange = ParserHelper.GetRangeForToken(context.NAME().Symbol);
+        var identifierRange = ParserHelper.GetRangeForToken(name.Symbol);
         
         if (identifier.Length < 2)
         {
@@ -113,12 +122,16 @@ public class SymbolListener : SinumerikNCBaseListener
     public override void ExitMacroDeclaration(SinumerikNCParser.MacroDeclarationContext context)
     {
         if (context.exception != null) return;
+
+        var name = context.NAME();
+        var macroValue = context.macroValue();
+        if (name == null || macroValue == null) return;
         
-        var identifier = context.NAME()?.GetText() ?? string.Empty;
+        var identifier = name.GetText();
         var uri = _document.Information.Uri;
         var symbolRange = ParserHelper.GetRangeFromStartToEndToken(context.Start, context.Stop);
-        var identifierRange = ParserHelper.GetRangeForToken(context.NAME().Symbol);
-        var value = ReplacePlaceholder(context.macroValue().GetText());
+        var identifierRange = ParserHelper.GetRangeForToken(name.Symbol);
+        var value = ReplacePlaceholder(macroValue.GetText());
         var isGlobal = _document.Information.DocumentType is DocumentType.Definition or DocumentType.MainProcedure;
         
         if (identifier.Length < 2)
@@ -150,8 +163,11 @@ public class SymbolListener : SinumerikNCBaseListener
         
         foreach (var variable in context.variableNameDeclaration() ?? Array.Empty<SinumerikNCParser.VariableNameDeclarationContext>())
         {
-            var identifier = variable.NAME().GetText();
-            var identifierRange = ParserHelper.GetRangeForToken(variable.NAME().Symbol);
+            var name = variable.NAME();
+            if (name == null) continue;
+
+            var identifier = name.GetText();
+            var identifierRange = ParserHelper.GetRangeForToken(name.Symbol);
             var arrayDefinition = GetArrayDefinition(variable.arrayDefinition());
 
             if (identifier.Length < 2)
@@ -201,14 +217,20 @@ public class SymbolListener : SinumerikNCBaseListener
         SymbolTable.Add(symbol);
     }
 
-    private bool GetCompositeDataType(SinumerikNCParser.TypeContext typeContext, out CompositeDataType compositeDataType)
+    private bool GetCompositeDataType(SinumerikNCParser.TypeContext? typeContext, out CompositeDataType compositeDataType)
     {
+        if (typeContext == null)
+        {
+            compositeDataType = new CompositeDataType(DataType.Int);
+            return false;
+        }
+
         var success = GetDataType(typeContext, out var type);
         
         var length = "";
         if (type == DataType.String)
         {
-            length = typeContext.expression().GetText();
+            length = typeContext.expression()?.GetText() ?? string.Empty;
         }
         
         compositeDataType = new CompositeDataType(type, length);

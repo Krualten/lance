@@ -16,6 +16,17 @@ public class GlobalSymbolTable
         _globalSymbols = new List<AbstractSymbol>();
     }
 
+    public int Count
+    {
+        get
+        {
+            lock (SymbolTableLock)
+            {
+                return _globalSymbols.Count;
+            }
+        }
+    }
+
     /// <summary>
     /// Adds a new global symbol to the table.
     /// </summary>
