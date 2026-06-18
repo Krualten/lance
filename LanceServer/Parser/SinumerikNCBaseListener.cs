@@ -870,6 +870,20 @@ public partial class SinumerikNCBaseListener : ISinumerikNCListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitModalCall([NotNull] SinumerikNCParser.ModalCallContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by the <c>isoCall</c>
+	/// labeled alternative in <see cref="SinumerikNCParser.callStatement"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterIsoCall([NotNull] SinumerikNCParser.IsoCallContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>isoCall</c>
+	/// labeled alternative in <see cref="SinumerikNCParser.callStatement"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitIsoCall([NotNull] SinumerikNCParser.IsoCallContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="SinumerikNCParser.returnStatement"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>

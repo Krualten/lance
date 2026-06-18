@@ -303,4 +303,61 @@ MCALL
         Assert.AreEqual("TEST_HELPER", procedureUses[0].Identifier);
         Assert.AreEqual(2, procedureUses[0].Arguments.Length);
     }
+
+    [TestMethod]
+    public void LiteralIsoCallCreatesProcedureUseWithExplicitPath()
+    {
+        var code = @"ISOCALL ""/_N_WKS_DIR/_N_LIBRARY_WPD/_N_ISO_HELPER_SPF""" + Environment.NewLine;
+        var preprocessedDocument = new PreprocessedDocument(
+            new DocumentInformationMock(new Uri("file:///MAIN.MPF"), ".mpf", DocumentType.MainProcedure),
+            code,
+            code,
+            new PlaceholderTable(new Dictionary<string, string>()),
+            "");
+        var parserManager = new ParserManager();
+        var parserResult = parserManager.Parse(preprocessedDocument);
+        var parsedDocument = new ParsedDocument(
+            preprocessedDocument,
+            parserResult.ParseTree,
+            parserResult.Diagnostics);
+        var symbolisedDocument = new SymbolisedDocument(parsedDocument, new SymbolTable());
+
+        var procedureUse = parserManager
+            .GetSymbolUseForDocument(symbolisedDocument)
+            .OfType<ProcedureUse>()
+            .Single();
+
+        Assert.AreEqual(
+            0,
+            parserResult.Diagnostics.Count,
+            string.Join(Environment.NewLine, parserResult.Diagnostics.Select(diagnostic => diagnostic.Message)));
+        Assert.AreEqual("ISO_HELPER", procedureUse.Identifier);
+        Assert.AreEqual("/_N_WKS_DIR/_N_LIBRARY_WPD", procedureUse.ExplicitDirectoryPath);
+        Assert.AreEqual(".spf", procedureUse.ExplicitFileExtension);
+    }
+
+    [TestMethod]
+    public void VariableIsoCallRemainsDynamicVariableUse()
+    {
+        var code = @"ISOCALL programName" + Environment.NewLine;
+        var preprocessedDocument = new PreprocessedDocument(
+            new DocumentInformationMock(new Uri("file:///MAIN.MPF"), ".mpf", DocumentType.MainProcedure),
+            code,
+            code,
+            new PlaceholderTable(new Dictionary<string, string>()),
+            "");
+        var parserManager = new ParserManager();
+        var parserResult = parserManager.Parse(preprocessedDocument);
+        var parsedDocument = new ParsedDocument(
+            preprocessedDocument,
+            parserResult.ParseTree,
+            parserResult.Diagnostics);
+        var symbolisedDocument = new SymbolisedDocument(parsedDocument, new SymbolTable());
+
+        var symbolUses = parserManager.GetSymbolUseForDocument(symbolisedDocument).ToList();
+
+        Assert.AreEqual(0, parserResult.Diagnostics.Count);
+        Assert.AreEqual(0, symbolUses.OfType<ProcedureUse>().Count());
+        Assert.IsTrue(symbolUses.Any(use => use is SymbolUse && use.Identifier == "programName"));
+    }
 }

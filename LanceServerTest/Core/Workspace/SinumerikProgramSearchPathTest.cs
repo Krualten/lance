@@ -113,6 +113,53 @@ public class SinumerikProgramSearchPathTest
             orderedPaths[0]);
     }
 
+    [TestMethod]
+    public void MissingExplicitProgramDirectoryDoesNotFallBackToHomonym()
+    {
+        var reference = CreateUri("NC", "WKS.DIR", "PART.WPD", "MAIN.MPF");
+        var candidates = new[]
+        {
+            CreateProcedure("NC", "WKS.DIR", "PART.WPD", "HELPER.SPF"),
+            CreateProcedure("NC", "CUS.DIR", "HELPER.SPF")
+        };
+
+        var orderedPaths = SinumerikProgramSearchPath
+            .OrderCandidates(
+                candidates,
+                reference,
+                Array.Empty<string>(),
+                explicitDirectoryPath: "/_N_WKS_DIR/_N_MISSING_WPD",
+                explicitFileExtension: ".spf")
+            .ToList();
+
+        Assert.AreEqual(0, orderedPaths.Count);
+    }
+
+    [TestMethod]
+    public void ExplicitProgramTypeFiltersMpfAndSpfHomonyms()
+    {
+        var reference = CreateUri("NC", "WKS.DIR", "PART.WPD", "MAIN.MPF");
+        var candidates = new[]
+        {
+            CreateProcedure("NC", "WKS.DIR", "LIBRARY.WPD", "HELPER.MPF"),
+            CreateProcedure("NC", "WKS.DIR", "LIBRARY.WPD", "HELPER.SPF")
+        };
+
+        var orderedPaths = SinumerikProgramSearchPath
+            .OrderCandidates(
+                candidates,
+                reference,
+                Array.Empty<string>(),
+                explicitDirectoryPath: "/_N_WKS_DIR/_N_LIBRARY_WPD",
+                explicitFileExtension: ".spf")
+            .Select(symbol => symbol.SourceDocument.LocalPath)
+            .ToList();
+
+        CollectionAssert.AreEqual(
+            new[] { CreatePath("NC", "WKS.DIR", "LIBRARY.WPD", "HELPER.SPF") },
+            orderedPaths);
+    }
+
     private static ProcedureSymbol CreateProcedure(params string[] pathParts)
     {
         var range = new Range

@@ -31,7 +31,8 @@ public static class SinumerikProgramSearchPath
         Uri documentOfReference,
         IEnumerable<string> configuredManufacturerCyclesDirectories,
         string? callPath = null,
-        string? explicitDirectoryPath = null)
+        string? explicitDirectoryPath = null,
+        string? explicitFileExtension = null)
     {
         var referenceDirectory = Path.GetDirectoryName(documentOfReference.LocalPath) ?? string.Empty;
         var manufacturerDirectories = configuredManufacturerCyclesDirectories
@@ -39,8 +40,25 @@ public static class SinumerikProgramSearchPath
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
         var normalizedCallPath = NormalizeProgramDirectoryPath(callPath);
         var normalizedExplicitDirectoryPath = NormalizeProgramDirectoryPath(explicitDirectoryPath);
+        var filteredCandidates = candidates;
 
-        return candidates
+        if (normalizedExplicitDirectoryPath.Count > 0)
+        {
+            filteredCandidates = filteredCandidates.Where(candidate =>
+                DirectoryMatchesPath(
+                    Path.GetDirectoryName(candidate.SourceDocument.LocalPath) ?? string.Empty,
+                    normalizedExplicitDirectoryPath));
+        }
+
+        if (!string.IsNullOrEmpty(explicitFileExtension))
+        {
+            filteredCandidates = filteredCandidates.Where(candidate =>
+                Path.GetExtension(candidate.SourceDocument.LocalPath).Equals(
+                    explicitFileExtension,
+                    StringComparison.OrdinalIgnoreCase));
+        }
+
+        return filteredCandidates
             .OrderBy(candidate => GetRank(
                 candidate,
                 documentOfReference,

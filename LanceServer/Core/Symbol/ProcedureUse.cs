@@ -30,6 +30,11 @@ public class ProcedureUse : AbstractSymbolUse
     /// Directory explicitly encoded in a literal indirect CALL program path, if any.
     /// </summary>
     public string? ExplicitDirectoryPath { get; }
+
+    /// <summary>
+    /// File extension explicitly encoded in an NC program reference, if any.
+    /// </summary>
+    public string? ExplicitFileExtension { get; }
     
     public ProcedureUse(
         string identifier,
@@ -37,7 +42,8 @@ public class ProcedureUse : AbstractSymbolUse
         Uri sourceDocument,
         ProcedureUseArgument[] arguments,
         string? callPath = null,
-        string? explicitDirectoryPath = null)
+        string? explicitDirectoryPath = null,
+        string? explicitFileExtension = null)
     {
         Identifier = identifier;
         Range = range;
@@ -45,5 +51,6 @@ public class ProcedureUse : AbstractSymbolUse
         Arguments = arguments;
         CallPath = callPath;
         ExplicitDirectoryPath = explicitDirectoryPath;
+        ExplicitFileExtension = explicitFileExtension;
     }
 }

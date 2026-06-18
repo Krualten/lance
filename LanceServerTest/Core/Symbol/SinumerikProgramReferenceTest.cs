@@ -12,11 +12,13 @@ public class SinumerikProgramReferenceTest
         var success = SinumerikProgramReference.TryParse(
             "/_N_WKS_DIR/_N_LIBRARY_WPD/_N_TEST_HELPER_SPF",
             out var identifier,
-            out var directoryPath);
+            out var directoryPath,
+            out var fileExtension);
 
         Assert.IsTrue(success);
         Assert.AreEqual("TEST_HELPER", identifier);
         Assert.AreEqual("/_N_WKS_DIR/_N_LIBRARY_WPD", directoryPath);
+        Assert.AreEqual(".spf", fileExtension);
     }
 
     [DataTestMethod]

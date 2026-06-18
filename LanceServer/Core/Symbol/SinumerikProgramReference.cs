@@ -10,8 +10,18 @@ public static class SinumerikProgramReference
         out string identifier,
         out string? directoryPath)
     {
+        return TryParse(value, out identifier, out directoryPath, out _);
+    }
+
+    public static bool TryParse(
+        string value,
+        out string identifier,
+        out string? directoryPath,
+        out string? fileExtension)
+    {
         identifier = string.Empty;
         directoryPath = null;
+        fileExtension = null;
 
         var normalized = value.Trim().Replace('\\', '/');
         if (string.IsNullOrEmpty(normalized))
@@ -25,7 +35,7 @@ public static class SinumerikProgramReference
             return false;
         }
 
-        identifier = NormalizeProgramName(segments[^1]);
+        identifier = NormalizeProgramName(segments[^1], out fileExtension);
         if (string.IsNullOrEmpty(identifier))
         {
             return false;
@@ -39,8 +49,9 @@ public static class SinumerikProgramReference
         return true;
     }
 
-    private static string NormalizeProgramName(string programName)
+    private static string NormalizeProgramName(string programName, out string? fileExtension)
     {
+        fileExtension = null;
         var normalized = programName.Trim();
         if (normalized.StartsWith("_N_", StringComparison.OrdinalIgnoreCase))
         {
@@ -52,6 +63,7 @@ public static class SinumerikProgramReference
             if (normalized.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
             {
                 normalized = normalized[..^suffix.Length];
+                fileExtension = "." + suffix[^3..].ToLowerInvariant();
                 break;
             }
         }

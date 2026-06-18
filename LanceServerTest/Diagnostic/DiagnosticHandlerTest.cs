@@ -164,6 +164,100 @@ ENDPROC
         }
     }
 
+    [TestMethod]
+    public void MissingExplicitIsoCallPathDoesNotResolveLocalHomonym()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "lance-isocall-" + Guid.NewGuid());
+        var workpieceDirectory = Path.Combine(directory, "WKS.DIR", "MAIN.WPD");
+        Directory.CreateDirectory(workpieceDirectory);
+        var localHelperPath = Path.Combine(workpieceDirectory, "ISO_HELPER.SPF");
+        var mainPath = Path.Combine(workpieceDirectory, "TEST_MAIN.MPF");
+        File.WriteAllText(
+            localHelperPath,
+            "PROC ISO_HELPER()" + Environment.NewLine + "RET" + Environment.NewLine + "ENDPROC");
+        File.WriteAllText(
+            mainPath,
+            @"PROC TEST_MAIN()
+ISOCALL ""/_N_WKS_DIR/_N_MISSING_WPD/_N_ISO_HELPER_SPF""
+RET
+ENDPROC
+");
+
+        try
+        {
+            var configurationManager = CreateConfigurationManager();
+            var workspace = new Workspace(
+                new ParserManager(),
+                new PlaceholderPreprocessor(configurationManager),
+                configurationManager);
+            workspace.GetSymbolisedDocument(new Uri(localHelperPath));
+            var mainDocument = workspace.GetSymbolUseExtractedDocument(new Uri(mainPath));
+
+            var diagnostics = new DiagnosticHandler().HandleRequest(mainDocument, workspace).Items;
+
+            Assert.IsTrue(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.Equals("Cannot resolve symbol ISO_HELPER.", StringComparison.Ordinal)));
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [TestMethod]
+    public void LiteralIsoCallResolvesExactSpfPath()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "lance-isocall-exact-" + Guid.NewGuid());
+        var mainDirectory = Path.Combine(directory, "WKS.DIR", "MAIN.WPD");
+        var libraryDirectory = Path.Combine(directory, "WKS.DIR", "LIBRARY.WPD");
+        Directory.CreateDirectory(mainDirectory);
+        Directory.CreateDirectory(libraryDirectory);
+        var localHelperPath = Path.Combine(mainDirectory, "ISO_HELPER.SPF");
+        var libraryMpfPath = Path.Combine(libraryDirectory, "ISO_HELPER.MPF");
+        var librarySpfPath = Path.Combine(libraryDirectory, "ISO_HELPER.SPF");
+        var mainPath = Path.Combine(mainDirectory, "TEST_MAIN.MPF");
+        var helperCode = "PROC ISO_HELPER()" + Environment.NewLine + "RET" + Environment.NewLine + "ENDPROC";
+        File.WriteAllText(localHelperPath, helperCode);
+        File.WriteAllText(libraryMpfPath, helperCode);
+        File.WriteAllText(librarySpfPath, helperCode);
+        File.WriteAllText(
+            mainPath,
+            @"PROC TEST_MAIN()
+ISOCALL ""/_N_WKS_DIR/_N_LIBRARY_WPD/_N_ISO_HELPER_SPF""
+RET
+ENDPROC
+");
+
+        try
+        {
+            var configurationManager = CreateConfigurationManager();
+            var workspace = new Workspace(
+                new ParserManager(),
+                new PlaceholderPreprocessor(configurationManager),
+                configurationManager);
+            workspace.GetSymbolisedDocument(new Uri(localHelperPath));
+            workspace.GetSymbolisedDocument(new Uri(libraryMpfPath));
+            var librarySpfUri = new Uri(librarySpfPath);
+            workspace.GetSymbolisedDocument(librarySpfUri);
+            var mainDocument = workspace.GetSymbolUseExtractedDocument(new Uri(mainPath));
+            var procedureUse = mainDocument.SymbolUseTable.GetAll().OfType<ProcedureUse>().Single();
+
+            var resolvedProcedures = workspace.GetSymbols(procedureUse).OfType<ProcedureSymbol>().ToList();
+            var diagnostics = new DiagnosticHandler().HandleRequest(mainDocument, workspace).Items;
+
+            Assert.AreEqual(1, resolvedProcedures.Count);
+            Assert.AreEqual(librarySpfUri, resolvedProcedures[0].SourceDocument);
+            Assert.IsFalse(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.Equals("Cannot resolve symbol ISO_HELPER.", StringComparison.Ordinal)));
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
     [DataTestMethod]
     [DataRow("cus.dir")]
     [DataRow("cma.dir")]

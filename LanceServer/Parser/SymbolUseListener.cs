@@ -114,15 +114,29 @@ public class SymbolUseListener : SinumerikNCBaseListener
     public override void ExitCall(SinumerikNCParser.CallContext context)
     {
         var expression = context.expression();
-        if (expression == null || !TryGetStringLiteral(expression.GetText(), out var programReference))
+        if (expression != null)
         {
-            return;
+            AddLiteralProgramUse(expression);
         }
+    }
 
-        if (!SinumerikProgramReference.TryParse(
+    /// <summary>
+    /// Resolves literal ISO program calls. Variable-based targets remain ordinary variable
+    /// uses because their runtime value cannot be inferred safely.
+    /// </summary>
+    public override void ExitIsoCall(SinumerikNCParser.IsoCallContext context)
+    {
+        AddLiteralProgramUse(context.expression());
+    }
+
+    private void AddLiteralProgramUse(SinumerikNCParser.ExpressionContext expression)
+    {
+        if (!TryGetStringLiteral(expression.GetText(), out var programReference)
+            || !SinumerikProgramReference.TryParse(
                 programReference,
                 out var identifier,
-                out var explicitDirectoryPath))
+                out var explicitDirectoryPath,
+                out var explicitFileExtension))
         {
             return;
         }
@@ -133,7 +147,8 @@ public class SymbolUseListener : SinumerikNCBaseListener
             _document.Information.Uri,
             Array.Empty<ProcedureUseArgument>(),
             _activeCallPath,
-            explicitDirectoryPath));
+            explicitDirectoryPath,
+            explicitFileExtension));
     }
 
     /// <summary>
