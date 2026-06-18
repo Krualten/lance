@@ -21,6 +21,7 @@ public class Workspace : IWorkspace
     private readonly IConfigurationManager _configurationManager;
 
     private ConcurrentDictionary<Uri, Document.Document> _documents = new();
+    private readonly object _globalSymbolLock = new object();
 
     public Workspace(IParserManager parserManager, IPlaceholderPreprocessor placeholderPreprocessor, IConfigurationManager configurationManager)
     {
@@ -61,20 +62,23 @@ public class Workspace : IWorkspace
         var symbolList = _parserManager.GetSymbolTableForDocument(parsedDocument).ToList();
             
         //update symbol table
-        GlobalSymbolTable.DeleteGlobalSymbolsOfDocument(uri);
-
-        var newGlobalSymbols = symbolList.Where(symbol => symbol is ProcedureSymbol).ToList();
-
-        if (parsedDocument.Information.DocumentType is DocumentType.Definition or DocumentType.MainProcedure)
+        lock (_globalSymbolLock)
         {
-            newGlobalSymbols.AddRange(symbolList.Where(symbol => symbol is VariableSymbol or MacroSymbol));
-        }
+            GlobalSymbolTable.DeleteGlobalSymbolsOfDocument(uri);
 
-        symbolList = symbolList.Except(newGlobalSymbols).ToList();
-       
-        foreach (var newSymbol in newGlobalSymbols)
-        {
-            GlobalSymbolTable.AddSymbol(newSymbol);
+            var newGlobalSymbols = symbolList.Where(symbol => symbol is ProcedureSymbol).ToList();
+
+            if (parsedDocument.Information.DocumentType is DocumentType.Definition or DocumentType.MainProcedure)
+            {
+                newGlobalSymbols.AddRange(symbolList.Where(symbol => symbol is VariableSymbol or MacroSymbol));
+            }
+
+            symbolList = symbolList.Except(newGlobalSymbols).ToList();
+        
+            foreach (var newSymbol in newGlobalSymbols)
+            {
+                GlobalSymbolTable.AddSymbol(newSymbol);
+            }
         }
 
         var symbolTable = new SymbolTable();
