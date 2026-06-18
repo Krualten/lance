@@ -96,7 +96,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
             return;
         }
 
-        var arguments = context.arguments() != null ? context.arguments().expression().Select(_ => new ProcedureUseArgument()).ToArray() : Array.Empty<ProcedureUseArgument>();
+        var arguments = GetProcedureArguments(context.arguments());
 
         SymbolUseTable.Add(new ProcedureUse(
             token.Text,
@@ -137,9 +137,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
             return;
         }
 
-        var arguments = procedure!.arguments() != null
-            ? procedure.arguments().expression().Select(_ => new ProcedureUseArgument()).ToArray()
-            : Array.Empty<ProcedureUseArgument>();
+        var arguments = GetProcedureArguments(procedure!.arguments());
         var canonicalAbsoluteCall = path != null && !HasExplicitProgramFileIdentifier(token.Text);
 
         SymbolUseTable.Add(new ProcedureUse(
@@ -266,9 +264,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
             return;
         }
 
-        var arguments = context.arguments() != null
-            ? context.arguments().expression().Select(_ => new ProcedureUseArgument()).ToArray()
-            : Array.Empty<ProcedureUseArgument>();
+        var arguments = GetProcedureArguments(context.arguments());
 
         SymbolUseTable.Add(new ProcedureUse(
             token.Text,
@@ -295,7 +291,9 @@ public class SymbolUseListener : SinumerikNCBaseListener
             return;
         }
 
-        var arguments = context.parameterDeclarations() != null ? context.parameterDeclarations().parameterDeclaration().Select(_ => new ProcedureUseArgument()).ToArray() : Array.Empty<ProcedureUseArgument>();
+        var arguments = context.parameterDeclarations()?.parameterDeclaration()
+            .Select((_, position) => new ProcedureUseArgument(position))
+            .ToArray() ?? Array.Empty<ProcedureUseArgument>();
         var identifier = SinumerikProgramReference.TryParse(token.Text, out var normalizedIdentifier, out _)
             ? normalizedIdentifier
             : token.Text;
@@ -324,6 +322,36 @@ public class SymbolUseListener : SinumerikNCBaseListener
     }
 
     private bool IsOperateGroupMetadata => _operateGroupDirectiveDepth > 0;
+
+    private static ProcedureUseArgument[] GetProcedureArguments(SinumerikNCParser.ArgumentsContext? context)
+    {
+        if (context == null || (context.expression().Length == 0 && context.COMMA().Length == 0))
+        {
+            return Array.Empty<ProcedureUseArgument>();
+        }
+
+        var expressions = context.expression();
+        var separators = context.COMMA()
+            .Select(comma => comma.Symbol.TokenIndex)
+            .ToList();
+        var closingBoundary = context.CLOSE_PAREN()?.Symbol.TokenIndex
+                              ?? (context.Stop?.TokenIndex ?? context.Start.TokenIndex) + 1;
+        separators.Add(closingBoundary);
+        var arguments = new ProcedureUseArgument[separators.Count];
+        var previousSeparator = context.OPEN_PAREN()?.Symbol.TokenIndex ?? context.Start.TokenIndex;
+
+        for (var position = 0; position < separators.Count; position++)
+        {
+            var separator = separators[position];
+            var hasExpression = expressions.Any(expression =>
+                expression.Start.TokenIndex > previousSeparator
+                && expression.Stop.TokenIndex < separator);
+            arguments[position] = new ProcedureUseArgument(position, !hasExpression);
+            previousSeparator = separator;
+        }
+
+        return arguments;
+    }
 
     private void AddTokenIfNotPlaceholder(IToken token)
     {

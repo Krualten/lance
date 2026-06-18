@@ -5,7 +5,7 @@
 /// </summary>
 public class CompositeDataType
 {
-    private readonly DataType _dataType;
+    public DataType DataType { get; }
     private readonly string _length;
 
     /// <summary>
@@ -16,7 +16,7 @@ public class CompositeDataType
     public CompositeDataType(DataType dataType, string length = "")
     {
         _length = length;
-        _dataType = dataType;
+        DataType = dataType;
     }
 
     /// <inheritdoc />
@@ -24,11 +24,11 @@ public class CompositeDataType
     {
         string length = string.Empty;
 
-        if (_dataType == DataType.String)
+        if (DataType == DataType.String)
         {
             length = $"[{_length}]";
         }
             
-        return $"{_dataType.ToString().ToLower()}{length}";
+        return $"{DataType.ToString().ToLower()}{length}";
     }
 }

@@ -47,7 +47,30 @@ public class ProcedureSymbol : AbstractSymbol
     /// <returns>True if the number of arguments matches the parameters required, false otherwise.</returns>
     public bool ArgumentsMatchParameters(ProcedureUseArgument[] arguments)
     {
-        return Parameters.Count(parameter => !parameter.HasDefaultValue) <= arguments.Length && arguments.Length <= Parameters.Length;
+        if (arguments.Length > Parameters.Length)
+        {
+            return false;
+        }
+
+        for (var index = 0; index < Parameters.Length; index++)
+        {
+            var omitted = index >= arguments.Length || arguments[index].IsOmitted;
+            if (omitted && !Parameters[index].CanBeOmitted)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// EXTERN declarations describe the complete procedure interface and therefore cannot
+    /// omit trailing or positional formal parameters.
+    /// </summary>
+    public bool DeclarationMatchesParameters(ProcedureUseArgument[] arguments)
+    {
+        return arguments.Length == Parameters.Length && arguments.All(argument => !argument.IsOmitted);
     }
     
     private const string ParameterDelimiter = ", ";

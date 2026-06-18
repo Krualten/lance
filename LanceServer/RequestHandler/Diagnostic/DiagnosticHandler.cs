@@ -50,7 +50,7 @@ public class DiagnosticHandler : IDiagnosticHandler
                             diagnostics.Add(DiagnosticMessage.UnnecessaryExtern(symbolUse));
                         }
 
-                        if (!procedureSymbol.ArgumentsMatchParameters(declarationUse.Arguments))
+                        if (!procedureSymbol.DeclarationMatchesParameters(declarationUse.Arguments))
                         {
                             diagnostics.Add(DiagnosticMessage.ParameterMismatch(declarationUse, procedureSymbol));
                         }

@@ -269,6 +269,103 @@ ENDPROC
     }
 
     [TestMethod]
+    public void ManufacturerCycleAllowsOmittedValueParameters()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "lance-cycle-omitted-value-" + Guid.NewGuid());
+        var cyclesDirectory = Path.Combine(directory, "CMA.DIR");
+        Directory.CreateDirectory(cyclesDirectory);
+        var helperPath = Path.Combine(cyclesDirectory, "OEM_CYCLE.SPF");
+        var mainPath = Path.Combine(directory, "TEST_MAIN.MPF");
+        File.WriteAllText(
+            helperPath,
+            @"PROC OEM_CYCLE(REAL depth, INT mode, BOOL enabled)
+RET
+ENDPROC
+");
+        File.WriteAllText(
+            mainPath,
+            @"PROC TEST_MAIN()
+DEF REAL depth
+OEM_CYCLE(depth,,)
+RET
+ENDPROC
+");
+
+        try
+        {
+            var configurationManager = CreateConfigurationManager();
+            var workspace = new Workspace(
+                new ParserManager(),
+                new PlaceholderPreprocessor(configurationManager),
+                configurationManager);
+            workspace.GetSymbolisedDocument(new Uri(helperPath));
+            var mainDocument = workspace.GetSymbolUseExtractedDocument(new Uri(mainPath));
+
+            var diagnostics = new DiagnosticHandler().HandleRequest(mainDocument, workspace).Items;
+
+            Assert.AreEqual(0, mainDocument.ParserDiagnostics.Count);
+            Assert.IsFalse(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.Equals(
+                        "Procedure arguments do not match the expected parameter interface.",
+                        StringComparison.Ordinal)));
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [TestMethod]
+    public void ManufacturerCycleRejectsOmittedReferenceParameter()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "lance-cycle-omitted-reference-" + Guid.NewGuid());
+        var cyclesDirectory = Path.Combine(directory, "CMA.DIR");
+        Directory.CreateDirectory(cyclesDirectory);
+        var helperPath = Path.Combine(cyclesDirectory, "OEM_CYCLE.SPF");
+        var mainPath = Path.Combine(directory, "TEST_MAIN.MPF");
+        File.WriteAllText(
+            helperPath,
+            @"PROC OEM_CYCLE(REAL depth, VAR INT result, AXIS machiningAxis)
+RET
+ENDPROC
+");
+        File.WriteAllText(
+            mainPath,
+            @"PROC TEST_MAIN()
+DEF REAL depth
+DEF AXIS machiningAxis
+OEM_CYCLE(depth,,machiningAxis)
+RET
+ENDPROC
+");
+
+        try
+        {
+            var configurationManager = CreateConfigurationManager();
+            var workspace = new Workspace(
+                new ParserManager(),
+                new PlaceholderPreprocessor(configurationManager),
+                configurationManager);
+            workspace.GetSymbolisedDocument(new Uri(helperPath));
+            var mainDocument = workspace.GetSymbolUseExtractedDocument(new Uri(mainPath));
+
+            var diagnostics = new DiagnosticHandler().HandleRequest(mainDocument, workspace).Items;
+
+            Assert.AreEqual(0, mainDocument.ParserDiagnostics.Count);
+            Assert.IsTrue(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.Equals(
+                        "Procedure arguments do not match the expected parameter interface.",
+                        StringComparison.Ordinal)));
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [TestMethod]
     public void MissingExplicitIsoCallPathDoesNotResolveLocalHomonym()
     {
         var directory = Path.Combine(Path.GetTempPath(), "lance-isocall-" + Guid.NewGuid());

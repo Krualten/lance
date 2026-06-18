@@ -165,7 +165,7 @@ public static class DiagnosticMessage
             Range = declarationUse.Range,
             Severity = DiagnosticSeverity.Warning,
             Source = DiagnosticSource,
-            Message = $"Number of parameters does not match the number of expected parameters."
+            Message = "Procedure arguments do not match the expected parameter interface."
         };
     }
 

@@ -368,6 +368,60 @@ PCALL/_N_WKS_DIR/_N_LIBRARY_WPD/_N_TEST_HELPER_SPF(mainAxis)
             symbolUses.OfType<ProcedureUse>().Single().Identifier);
     }
 
+    [DataTestMethod]
+    [DataRow("TEST_HELPER(firstValue,,thirdValue,)")]
+    [DataRow("MCALL TEST_HELPER(firstValue,,thirdValue,)")]
+    [DataRow("PCALL/_N_WKS_DIR/_N_LIBRARY_WPD/TEST_HELPER(firstValue,,thirdValue,)")]
+    public void ProcedureCallsPreserveOmittedArgumentPositions(string call)
+    {
+        var symbolUses = GetSymbolUses(call + Environment.NewLine, out var parserDiagnostics);
+        var arguments = symbolUses.OfType<ProcedureUse>().Single().Arguments;
+
+        Assert.AreEqual(
+            0,
+            parserDiagnostics.Count,
+            string.Join(Environment.NewLine, parserDiagnostics.Select(diagnostic => diagnostic.Message)));
+        Assert.AreEqual(4, arguments.Length);
+        CollectionAssert.AreEqual(new[] { 0, 1, 2, 3 }, arguments.Select(argument => argument.Position).ToArray());
+        CollectionAssert.AreEqual(
+            new[] { false, true, false, true },
+            arguments.Select(argument => argument.IsOmitted).ToArray());
+    }
+
+    [TestMethod]
+    public void EmptyParenthesesContainNoOmittedArgument()
+    {
+        var symbolUses = GetSymbolUses("TEST_HELPER()" + Environment.NewLine, out var parserDiagnostics);
+
+        Assert.AreEqual(0, parserDiagnostics.Count);
+        Assert.AreEqual(0, symbolUses.OfType<ProcedureUse>().Single().Arguments.Length);
+    }
+
+    [TestMethod]
+    public void NestedFunctionCommasDoNotCreateAdditionalProcedureArguments()
+    {
+        var code = "TEST_HELPER(ATAN2(firstValue, secondValue),,thirdValue)" + Environment.NewLine;
+        var symbolUses = GetSymbolUses(code, out var parserDiagnostics);
+        var arguments = symbolUses.OfType<ProcedureUse>().Single().Arguments;
+
+        Assert.AreEqual(0, parserDiagnostics.Count);
+        Assert.AreEqual(3, arguments.Length);
+        CollectionAssert.AreEqual(
+            new[] { false, true, false },
+            arguments.Select(argument => argument.IsOmitted).ToArray());
+    }
+
+    [TestMethod]
+    public void IncompleteProcedureArgumentsDoNotCrashSymbolExtraction()
+    {
+        var symbolUses = GetSymbolUses(
+            "TEST_HELPER(firstValue," + Environment.NewLine,
+            out var parserDiagnostics);
+
+        Assert.IsTrue(parserDiagnostics.Count > 0);
+        Assert.IsNotNull(symbolUses);
+    }
+
     [TestMethod]
     public void LiteralIsoCallCreatesProcedureUseWithExplicitPath()
     {

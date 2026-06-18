@@ -33,6 +33,12 @@ public class ParameterSymbol : AbstractSymbol
     /// </summary>
     public bool HasDefaultValue { get; }
 
+    /// <summary>
+    /// Whether SINUMERIK permits this formal parameter to be omitted by the caller.
+    /// Call-by-reference and AXIS parameters must always be transferred explicitly.
+    /// </summary>
+    public bool CanBeOmitted => !_isReferenceValue && _compositeDataType.DataType != DataType.Axis;
+
     private const string ArraySizeDelimiter = ", ";
     private readonly CompositeDataType _compositeDataType;
     private readonly string[] _arraySize;
