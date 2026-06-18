@@ -32,7 +32,7 @@ ENDPROC
             @"PROC TEST_MAIN()
 DEF INT mainAxis
 DEF REAL mainPos
-CALL TEST_HELPER(mainAxis, mainPos)
+TEST_HELPER(mainAxis, mainPos)
 RET
 ENDPROC
 ");
@@ -53,9 +53,16 @@ ENDPROC
             var diagnostics = new DiagnosticHandler().HandleRequest(mainDocument, workspace).Items;
 
             // Assert
+            Assert.AreEqual(
+                0,
+                mainDocument.ParserDiagnostics.Count,
+                string.Join(Environment.NewLine, mainDocument.ParserDiagnostics.Select(diagnostic => diagnostic.Message)));
             Assert.IsFalse(
                 diagnostics.Any(diagnostic =>
                     diagnostic.Message.StartsWith("Missing extern declaration", StringComparison.Ordinal)));
+            Assert.IsFalse(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.Equals("Cannot resolve symbol TEST_HELPER.", StringComparison.Ordinal)));
         }
         finally
         {

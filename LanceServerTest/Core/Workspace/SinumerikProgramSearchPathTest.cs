@@ -1,0 +1,93 @@
+using LanceServer.Core.Symbol;
+using LanceServer.Core.Workspace;
+using LspTypes;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Range = LspTypes.Range;
+
+namespace LanceServerTest.Core.Workspace;
+
+[TestClass]
+public class SinumerikProgramSearchPathTest
+{
+    [TestMethod]
+    public void ProcedureCandidatesFollowSinumerikDirectorySearchOrder()
+    {
+        // Arrange
+        var reference = CreateUri("NC", "WKS.DIR", "PART.WPD", "MAIN.MPF");
+        var candidates = new[]
+        {
+            CreateProcedure("NC", "OTHER.DIR", "HELPER.SPF"),
+            CreateProcedure("NC", "_N_CST_DIR", "HELPER.SPF"),
+            CreateProcedure("NC", "CMA.DIR", "HELPER.SPF"),
+            CreateProcedure("NC", "_N_CUS_DIR", "HELPER.SPF"),
+            CreateProcedure("NC", "SPF.DIR", "HELPER.SPF"),
+            CreateProcedure("NC", "WKS.DIR", "PART.WPD", "HELPER.SPF")
+        };
+
+        // Act
+        var orderedPaths = SinumerikProgramSearchPath
+            .OrderCandidates(candidates, reference, Array.Empty<string>())
+            .Select(symbol => symbol.SourceDocument.LocalPath)
+            .ToList();
+
+        // Assert
+        CollectionAssert.AreEqual(
+            new[]
+            {
+                CreatePath("NC", "WKS.DIR", "PART.WPD", "HELPER.SPF"),
+                CreatePath("NC", "SPF.DIR", "HELPER.SPF"),
+                CreatePath("NC", "_N_CUS_DIR", "HELPER.SPF"),
+                CreatePath("NC", "CMA.DIR", "HELPER.SPF"),
+                CreatePath("NC", "_N_CST_DIR", "HELPER.SPF"),
+                CreatePath("NC", "OTHER.DIR", "HELPER.SPF")
+            },
+            orderedPaths);
+    }
+
+    [TestMethod]
+    public void ConfiguredManufacturerDirectoryUsesManufacturerCyclePriority()
+    {
+        // Arrange
+        var reference = CreateUri("NC", "WKS.DIR", "PART.WPD", "MAIN.MPF");
+        var candidates = new[]
+        {
+            CreateProcedure("NC", "OTHER.DIR", "HELPER.SPF"),
+            CreateProcedure("NC", "OEM_CYCLES", "HELPER.SPF")
+        };
+
+        // Act
+        var orderedPaths = SinumerikProgramSearchPath
+            .OrderCandidates(candidates, reference, new[] { "oem_cycles" })
+            .Select(symbol => symbol.SourceDocument.LocalPath)
+            .ToList();
+
+        // Assert
+        Assert.AreEqual(CreatePath("NC", "OEM_CYCLES", "HELPER.SPF"), orderedPaths[0]);
+    }
+
+    private static ProcedureSymbol CreateProcedure(params string[] pathParts)
+    {
+        var range = new Range
+        {
+            Start = new Position(0, 0),
+            End = new Position(0, 0)
+        };
+
+        return new ProcedureSymbol(
+            "HELPER",
+            CreateUri(pathParts),
+            range,
+            range,
+            Array.Empty<ParameterSymbol>());
+    }
+
+    private static Uri CreateUri(params string[] pathParts)
+    {
+        return new Uri(CreatePath(pathParts));
+    }
+
+    private static string CreatePath(params string[] pathParts)
+    {
+        return Path.GetFullPath(Path.Combine(Path.GetTempPath(), Path.Combine(pathParts)));
+    }
+}

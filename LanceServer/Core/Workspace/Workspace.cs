@@ -275,7 +275,11 @@ public class Workspace : IWorkspace
         _globalSymbolLock.EnterReadLock();
         try
         {
-            symbols.AddRange(GlobalSymbolTable.GetGlobalSymbols(symbolName));
+            var globalSymbols = GlobalSymbolTable.GetGlobalSymbols(symbolName);
+            symbols.AddRange(SinumerikProgramSearchPath.OrderCandidates(
+                globalSymbols,
+                documentOfReference,
+                _configurationManager.SymbolTableConfiguration.ManufacturerCyclesDirectories));
         }
         finally
         {
