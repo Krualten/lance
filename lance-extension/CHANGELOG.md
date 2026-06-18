@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fixed command-line configuration loading when `--config-file` points outside the current directory.
 - resolved procedure calls through statically known `CALLPATH` directories.
 - resolved literal indirect `CALL` targets, including explicit NC program paths.
+- corrected `MCALL` parameter syntax and added modal procedure resolution.
 
 ## [1.0.1] - 2023-06-03
 

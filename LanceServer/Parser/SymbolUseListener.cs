@@ -137,6 +137,36 @@ public class SymbolUseListener : SinumerikNCBaseListener
     }
 
     /// <summary>
+    /// Creates a procedure reference for modal subprogram activation. MCALL without a
+    /// program name only deactivates the current modal call and creates no reference.
+    /// </summary>
+    public override void ExitModalCall(SinumerikNCParser.ModalCallContext context)
+    {
+        var name = context.NAME();
+        if (name == null)
+        {
+            return;
+        }
+
+        var token = name.Symbol;
+        if (_document.PlaceholderTable.ContainedPlaceholder(token.Text))
+        {
+            return;
+        }
+
+        var arguments = context.arguments() != null
+            ? context.arguments().expression().Select(_ => new ProcedureUseArgument()).ToArray()
+            : Array.Empty<ProcedureUseArgument>();
+
+        SymbolUseTable.Add(new ProcedureUse(
+            token.Text,
+            ParserHelper.GetRangeForToken(token),
+            _document.Information.Uri,
+            arguments,
+            _activeCallPath));
+    }
+
+    /// <summary>
     /// Is called at the end of a extern declaration for a procedure.
     /// Creates a new <see cref="DeclarationProcedureUse"/> and adds it to the symbol use table, if it isn't a placeholder.
     /// </summary>

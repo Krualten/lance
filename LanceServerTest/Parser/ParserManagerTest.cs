@@ -268,4 +268,39 @@ OTHER()
         Assert.AreEqual("/_N_WKS_DIR/_N_LIBRARY_WPD", procedureUse.ExplicitDirectoryPath);
         Assert.AreEqual(0, procedureUse.Arguments.Length);
     }
+
+    [TestMethod]
+    public void ModalCallWithParametersCreatesProcedureUse()
+    {
+        var code =
+            @"MCALL TEST_HELPER(mainAxis, mainPos)
+MCALL
+";
+        var preprocessedDocument = new PreprocessedDocument(
+            new DocumentInformationMock(new Uri("file:///MAIN.MPF"), ".mpf", DocumentType.MainProcedure),
+            code,
+            code,
+            new PlaceholderTable(new Dictionary<string, string>()),
+            "");
+        var parserManager = new ParserManager();
+        var parserResult = parserManager.Parse(preprocessedDocument);
+        var parsedDocument = new ParsedDocument(
+            preprocessedDocument,
+            parserResult.ParseTree,
+            parserResult.Diagnostics);
+        var symbolisedDocument = new SymbolisedDocument(parsedDocument, new SymbolTable());
+
+        var procedureUses = parserManager
+            .GetSymbolUseForDocument(symbolisedDocument)
+            .OfType<ProcedureUse>()
+            .ToList();
+
+        Assert.AreEqual(
+            0,
+            parserResult.Diagnostics.Count,
+            string.Join(Environment.NewLine, parserResult.Diagnostics.Select(diagnostic => diagnostic.Message)));
+        Assert.AreEqual(1, procedureUses.Count);
+        Assert.AreEqual("TEST_HELPER", procedureUses[0].Identifier);
+        Assert.AreEqual(2, procedureUses[0].Arguments.Length);
+    }
 }
