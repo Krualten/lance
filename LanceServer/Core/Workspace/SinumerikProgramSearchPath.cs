@@ -8,6 +8,9 @@ namespace LanceServer.Core.Workspace;
 /// </summary>
 public static class SinumerikProgramSearchPath
 {
+    internal static readonly ISet<string> StandardCycleDirectories =
+        new HashSet<string>(new[] { "cus", "cma", "cst" }, StringComparer.OrdinalIgnoreCase);
+
     private const int CurrentDocumentRank = 0;
     private const int CurrentDirectoryRank = 1;
     private const int SubprogramDirectoryRank = 2;
@@ -72,8 +75,9 @@ public static class SinumerikProgramSearchPath
         };
     }
 
-    private static string NormalizeDirectoryName(string directoryName)
+    internal static string NormalizeDirectoryName(string? directoryName)
     {
+        directoryName ??= string.Empty;
         var normalized = directoryName
             .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
             .Replace('.', '_')

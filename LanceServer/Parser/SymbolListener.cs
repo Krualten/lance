@@ -110,7 +110,7 @@ public class SymbolListener : SinumerikNCBaseListener
             return;
         }
 
-        var mayNeedExternDeclaration = _document.Information.DocumentType is not DocumentType.ManufacturerSubProcedure && _parameters.Any();
+        var mayNeedExternDeclaration = _document.Information.DocumentType is not DocumentType.CycleSubProcedure && _parameters.Any();
         var symbol = new ProcedureSymbol(identifier, uri, symbolRange, identifierRange, _parameters.ToArray(), mayNeedExternDeclaration);
         SymbolTable.Add(symbol);
     }

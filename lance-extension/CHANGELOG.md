@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - support for standalone GUD access-right directives.
-- support for globally available manufacturer cycles without unnecessary `EXTERN` declarations.
+- support for globally available user, manufacturer and standard cycles without unnecessary `EXTERN` declarations.
 - configurable manufacturer-cycle directories.
 - SINUMERIK-aware procedure resolution using the standard directory search order.
 - regression coverage for incomplete code, GUD variables, manufacturer cycles and project-wide procedure resolution.

@@ -16,9 +16,15 @@ public enum DocumentType
     MainProcedure,
     
     /// <summary>
-    /// the type of manufacturer sub procedure files.
+    /// The type of user, manufacturer or standard cycle procedure files.
     /// </summary>
-    ManufacturerSubProcedure,
+    CycleSubProcedure,
+
+    /// <summary>
+    /// Legacy name for cycle procedure files.
+    /// </summary>
+    [Obsolete("Use CycleSubProcedure instead.")]
+    ManufacturerSubProcedure = CycleSubProcedure,
     
     /// <summary>
     /// The type of sub procedure files.

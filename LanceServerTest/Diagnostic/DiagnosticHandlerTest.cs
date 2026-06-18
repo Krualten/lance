@@ -11,15 +11,21 @@ namespace LanceServerTest.Diagnostic;
 [TestClass]
 public class DiagnosticHandlerTest
 {
-    [TestMethod]
-    public void ManufacturerCycleCallWithParametersDoesNotRequireExternDeclaration()
+    [DataTestMethod]
+    [DataRow("cus.dir")]
+    [DataRow("cma.dir")]
+    [DataRow("cst.dir")]
+    [DataRow("_N_CUS_DIR")]
+    [DataRow("_N_CMA_DIR")]
+    [DataRow("_N_CST_DIR")]
+    public void CycleCallWithParametersDoesNotRequireExternDeclaration(string cycleDirectoryName)
     {
         // Arrange
         var directory = Path.Combine(Path.GetTempPath(), "lance-extern-" + Guid.NewGuid());
         Directory.CreateDirectory(directory);
-        var manufacturerCyclesDirectory = Path.Combine(directory, "cma.dir");
-        Directory.CreateDirectory(manufacturerCyclesDirectory);
-        var helperPath = Path.Combine(manufacturerCyclesDirectory, "TEST_HELPER.SPF");
+        var cycleDirectory = Path.Combine(directory, cycleDirectoryName);
+        Directory.CreateDirectory(cycleDirectory);
+        var helperPath = Path.Combine(cycleDirectory, "TEST_HELPER.SPF");
         var mainPath = Path.Combine(directory, "TEST_MAIN.MPF");
         File.WriteAllText(
             helperPath,

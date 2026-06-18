@@ -50,9 +50,13 @@ public class DocumentInformation : IDocumentInformation
         } 
         else if (symbolTableConfiguration.SubProcedureFileExtensions.Any(fileExtension => FileExtension.EndsWith(fileExtension)))
         {
-            var directories = Path.GetDirectoryName(uri.LocalPath)!.ToLower().Split(Path.DirectorySeparatorChar);
-            var isInManufacturerCyclesDirectory = symbolTableConfiguration.ManufacturerCyclesDirectories.Intersect(directories).Any();
-            DocumentType = isInManufacturerCyclesDirectory ? DocumentType.ManufacturerSubProcedure : DocumentType.SubProcedure;
+            var parentDirectory = Path.GetFileName(Path.GetDirectoryName(uri.LocalPath));
+            var normalizedParentDirectory = SinumerikProgramSearchPath.NormalizeDirectoryName(parentDirectory);
+            var configuredCycleDirectories = symbolTableConfiguration.ManufacturerCyclesDirectories
+                .Select(SinumerikProgramSearchPath.NormalizeDirectoryName);
+            var isCycle = SinumerikProgramSearchPath.StandardCycleDirectories.Contains(normalizedParentDirectory)
+                          || configuredCycleDirectories.Contains(normalizedParentDirectory, StringComparer.OrdinalIgnoreCase);
+            DocumentType = isCycle ? DocumentType.CycleSubProcedure : DocumentType.SubProcedure;
         }
         else
         {
