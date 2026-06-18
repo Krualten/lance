@@ -244,6 +244,12 @@ public interface ISinumerikNCVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitVariableNameDeclaration([NotNull] SinumerikNCParser.VariableNameDeclarationContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="SinumerikNCParser.userVariableIdentifier"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitUserVariableIdentifier([NotNull] SinumerikNCParser.UserVariableIdentifierContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="SinumerikNCParser.arrayDefinition"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>

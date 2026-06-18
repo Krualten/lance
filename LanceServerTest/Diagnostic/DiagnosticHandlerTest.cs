@@ -348,6 +348,59 @@ ENDPROC
         }
     }
 
+    [TestMethod]
+    public void CallBlockResolvesProgramAndCallerStringVariables()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "lance-call-block-" + Guid.NewGuid());
+        Directory.CreateDirectory(directory);
+        var contourPath = Path.Combine(directory, "CONTOUR.SPF");
+        var mainPath = Path.Combine(directory, "TEST_MAIN.MPF");
+        File.WriteAllText(
+            contourPath,
+            @"PROC CONTOUR()
+LABEL_1:
+RET
+LABEL_2:
+ENDPROC
+");
+        File.WriteAllText(
+            mainPath,
+            @"PROC TEST_MAIN()
+DEF STRING[20] startLabel
+DEF STRING[20] endLabel
+startLabel=""LABEL_1""
+endLabel=""LABEL_2""
+CALL ""CONTOUR"" BLOCK startLabel TO endLabel
+RET
+ENDPROC
+");
+
+        try
+        {
+            var configurationManager = CreateConfigurationManager();
+            var workspace = new Workspace(
+                new ParserManager(),
+                new PlaceholderPreprocessor(configurationManager),
+                configurationManager);
+            workspace.GetSymbolisedDocument(new Uri(contourPath));
+            var mainDocument = workspace.GetSymbolUseExtractedDocument(new Uri(mainPath));
+
+            var diagnostics = new DiagnosticHandler().HandleRequest(mainDocument, workspace).Items;
+
+            Assert.AreEqual(
+                0,
+                mainDocument.ParserDiagnostics.Count,
+                string.Join(Environment.NewLine, mainDocument.ParserDiagnostics.Select(diagnostic => diagnostic.Message)));
+            Assert.IsFalse(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.StartsWith("Cannot resolve symbol", StringComparison.Ordinal)));
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
     [DataTestMethod]
     [DataRow("cus.dir")]
     [DataRow("cma.dir")]

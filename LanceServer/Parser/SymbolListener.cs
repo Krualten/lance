@@ -163,11 +163,11 @@ public class SymbolListener : SinumerikNCBaseListener
         
         foreach (var variable in context.variableNameDeclaration() ?? Array.Empty<SinumerikNCParser.VariableNameDeclarationContext>())
         {
-            var name = variable.NAME();
+            var name = variable.userVariableIdentifier();
             if (name == null) continue;
 
             var identifier = name.GetText();
-            var identifierRange = ParserHelper.GetRangeForToken(name.Symbol);
+            var identifierRange = ParserHelper.GetRangeForToken(name.Start);
             var arrayDefinition = GetArrayDefinition(variable.arrayDefinition());
 
             if (identifier.Length < 2)

@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - corrected `MCALL` parameter syntax and added modal procedure resolution.
 - added static `ISOCALL` resolution and made explicit program paths strict.
 - added static `EXTCALL` resolution for external programs represented in the workspace.
+- resolved optional programs and label variables in `CALL ... BLOCK ... TO ...`.
 
 ## [1.0.1] - 2023-06-03
 

@@ -952,7 +952,8 @@ variableModifiers: physicalUnit? limitValues?;
 physicalUnit: PHYS_UNIT intUnsigned;
 limitValues: ((LOWER_LIMIT | UPPER_LIMIT) expression)+;
 
-variableNameDeclaration: NAME (variableAssignmentExpression | arrayDefinition arrayAssignmentExpression?)?;
+variableNameDeclaration: userVariableIdentifier (variableAssignmentExpression | arrayDefinition arrayAssignmentExpression?)?;
+userVariableIdentifier: NAME | LABEL_END;
 
 arrayDefinition: OPEN_BRACKET expression (COMMA expression)? (COMMA expression)? CLOSE_BRACKET;
 variableAssignmentExpression: ASSIGNMENT expression;
@@ -962,10 +963,10 @@ variableRedecleration: REDEFINE (NAME | rParam | SYS_VAR) globalVariableModifier
 
 // assignment
 variableAssignment
-    : NAME variableAssignmentExpression                     #userVariableAssignment
+    : userVariableIdentifier variableAssignmentExpression   #userVariableAssignment
     | rParam variableAssignmentExpression                   #RParamAssignment
     | SYS_VAR variableAssignmentExpression                  #SysVarAssignment
-    | NAME arrayDefinition? arrayAssignmentExpression       #arrayVariableAssignment
+    | userVariableIdentifier arrayDefinition? arrayAssignmentExpression #arrayVariableAssignment
     | rParam arrayAssignmentExpression                      #arrayRParamAssignment
     | SYS_VAR arrayDefinition? arrayAssignmentExpression    #arraySysVarAssignment
     ;
@@ -1018,7 +1019,7 @@ gotoTarget
     ;
 
 callStatement
-    : CALL (expression | primaryExpression? CALL_BLOCK NAME TO NAME)                    #call
+    : CALL (expression | program=primaryExpression? CALL_BLOCK startLabel=primaryExpression TO endLabel=primaryExpression) #call
     | CALL_P primaryExpression ownProcedure?                                            #procedureCall
     | CALL_EXT OPEN_PAREN expression CLOSE_PAREN                                        #externalCall
     | CALL_PATH OPEN_PAREN expression? CLOSE_PAREN                                      #callPath
@@ -1056,7 +1057,7 @@ expression
     ;
 
 primaryExpression
-    : NAME arrayDefinition?                 #variableUse // technically #symbolUse
+    : userVariableIdentifier arrayDefinition? #variableUse // technically #symbolUse
     | SYS_VAR arrayDefinition?              #systemVariableUse
     | rParam                                #rParamUse
     | constant                              #constantUse

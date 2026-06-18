@@ -385,6 +385,16 @@ public interface ISinumerikNCListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitVariableNameDeclaration([NotNull] SinumerikNCParser.VariableNameDeclarationContext context);
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="SinumerikNCParser.userVariableIdentifier"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterUserVariableIdentifier([NotNull] SinumerikNCParser.UserVariableIdentifierContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="SinumerikNCParser.userVariableIdentifier"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitUserVariableIdentifier([NotNull] SinumerikNCParser.UserVariableIdentifierContext context);
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="SinumerikNCParser.arrayDefinition"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>

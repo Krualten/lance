@@ -29,7 +29,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
     /// </summary>
     public override void ExitUserVariableAssignment(SinumerikNCParser.UserVariableAssignmentContext context)
     {
-        AddNameIfNotPlaceholder(context.NAME());
+        AddIdentifierIfNotPlaceholder(context.userVariableIdentifier());
     }
 
     /// <summary>
@@ -38,7 +38,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
     /// </summary>
     public override void ExitArrayVariableAssignment(SinumerikNCParser.ArrayVariableAssignmentContext context)
     {
-        AddNameIfNotPlaceholder(context.NAME());
+        AddIdentifierIfNotPlaceholder(context.userVariableIdentifier());
     }
 
     /// <summary>
@@ -47,7 +47,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
     /// </summary>
     public override void ExitVariableUse(SinumerikNCParser.VariableUseContext context)
     {
-        AddNameIfNotPlaceholder(context.NAME());
+        AddIdentifierIfNotPlaceholder(context.userVariableIdentifier());
     }
 
     /// <summary>
@@ -113,6 +113,17 @@ public class SymbolUseListener : SinumerikNCBaseListener
     /// </summary>
     public override void ExitCall(SinumerikNCParser.CallContext context)
     {
+        if (context.CALL_BLOCK() != null)
+        {
+            var programExpression = context.program;
+            if (programExpression != null)
+            {
+                AddLiteralProgramUse(programExpression);
+            }
+
+            return;
+        }
+
         var expression = context.expression();
         if (expression != null)
         {
@@ -138,7 +149,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
         AddLiteralProgramUse(context.expression());
     }
 
-    private void AddLiteralProgramUse(SinumerikNCParser.ExpressionContext expression)
+    private void AddLiteralProgramUse(ParserRuleContext expression)
     {
         if (!TryGetStringLiteral(expression.GetText(), out var programReference)
             || !SinumerikProgramReference.TryParse(
@@ -246,6 +257,16 @@ public class SymbolUseListener : SinumerikNCBaseListener
         }
 
         AddTokenIfNotPlaceholder(name.Symbol);
+    }
+
+    private void AddIdentifierIfNotPlaceholder(ParserRuleContext? identifier)
+    {
+        if (identifier == null)
+        {
+            return;
+        }
+
+        AddTokenIfNotPlaceholder(identifier.Start);
     }
 
     private static bool TryGetStringLiteral(string text, out string value)

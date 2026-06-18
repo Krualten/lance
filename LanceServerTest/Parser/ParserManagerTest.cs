@@ -417,4 +417,68 @@ MCALL
         Assert.AreEqual(0, symbolUses.OfType<ProcedureUse>().Count());
         Assert.IsTrue(symbolUses.Any(use => use is SymbolUse && use.Identifier == "externalProgram"));
     }
+
+    [TestMethod]
+    public void CallBlockWithLiteralProgramCreatesProcedureAndLabelVariableUses()
+    {
+        var code = @"CALL ""CONTOUR"" BLOCK startLabel TO endLabel" + Environment.NewLine;
+        var symbolUses = GetSymbolUses(code, out var parserDiagnostics);
+
+        Assert.AreEqual(
+            0,
+            parserDiagnostics.Count,
+            string.Join(Environment.NewLine, parserDiagnostics.Select(diagnostic => diagnostic.Message)));
+        Assert.AreEqual(1, symbolUses.OfType<ProcedureUse>().Count());
+        Assert.AreEqual("CONTOUR", symbolUses.OfType<ProcedureUse>().Single().Identifier);
+        CollectionAssert.AreEquivalent(
+            new[] { "startLabel", "endLabel" },
+            symbolUses.OfType<SymbolUse>().Select(use => use.Identifier).ToArray());
+    }
+
+    [TestMethod]
+    public void LocalCallBlockOnlyCreatesLabelVariableUses()
+    {
+        var code = @"CALL BLOCK startLabel TO endLabel" + Environment.NewLine;
+        var symbolUses = GetSymbolUses(code, out var parserDiagnostics);
+
+        Assert.AreEqual(0, parserDiagnostics.Count);
+        Assert.AreEqual(0, symbolUses.OfType<ProcedureUse>().Count());
+        CollectionAssert.AreEquivalent(
+            new[] { "startLabel", "endLabel" },
+            symbolUses.OfType<SymbolUse>().Select(use => use.Identifier).ToArray());
+    }
+
+    [TestMethod]
+    public void CallBlockWithDynamicProgramKeepsAllStringVariablesDynamic()
+    {
+        var code = @"CALL programName BLOCK startLabel TO endLabel" + Environment.NewLine;
+        var symbolUses = GetSymbolUses(code, out var parserDiagnostics);
+
+        Assert.AreEqual(0, parserDiagnostics.Count);
+        Assert.AreEqual(0, symbolUses.OfType<ProcedureUse>().Count());
+        CollectionAssert.AreEquivalent(
+            new[] { "programName", "startLabel", "endLabel" },
+            symbolUses.OfType<SymbolUse>().Select(use => use.Identifier).ToArray());
+    }
+
+    private static IList<AbstractSymbolUse> GetSymbolUses(
+        string code,
+        out IList<LspTypes.Diagnostic> parserDiagnostics)
+    {
+        var preprocessedDocument = new PreprocessedDocument(
+            new DocumentInformationMock(new Uri("file:///MAIN.MPF"), ".mpf", DocumentType.MainProcedure),
+            code,
+            code,
+            new PlaceholderTable(new Dictionary<string, string>()),
+            "");
+        var parserManager = new ParserManager();
+        var parserResult = parserManager.Parse(preprocessedDocument);
+        var parsedDocument = new ParsedDocument(
+            preprocessedDocument,
+            parserResult.ParseTree,
+            parserResult.Diagnostics);
+        var symbolisedDocument = new SymbolisedDocument(parsedDocument, new SymbolTable());
+        parserDiagnostics = parserResult.Diagnostics;
+        return parserManager.GetSymbolUseForDocument(symbolisedDocument).ToList();
+    }
 }

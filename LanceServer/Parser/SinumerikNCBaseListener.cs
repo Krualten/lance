@@ -460,6 +460,18 @@ public partial class SinumerikNCBaseListener : ISinumerikNCListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitVariableNameDeclaration([NotNull] SinumerikNCParser.VariableNameDeclarationContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="SinumerikNCParser.userVariableIdentifier"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterUserVariableIdentifier([NotNull] SinumerikNCParser.UserVariableIdentifierContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="SinumerikNCParser.userVariableIdentifier"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitUserVariableIdentifier([NotNull] SinumerikNCParser.UserVariableIdentifierContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="SinumerikNCParser.arrayDefinition"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
