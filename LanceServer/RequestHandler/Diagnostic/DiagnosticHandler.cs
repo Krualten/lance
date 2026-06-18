@@ -94,7 +94,9 @@ public class DiagnosticHandler : IDiagnosticHandler
 
         foreach (var globalSymbol in globalSymbols)
         {
-            var duplicateSymbols = workspace.GlobalSymbolTable.GetGlobalSymbols(globalSymbol.Identifier).Where(duplicate => !duplicate.Equals(globalSymbol)).ToList();
+            var duplicateSymbols = GlobalSymbolConflict.GetConflicts(
+                globalSymbol,
+                workspace.GlobalSymbolTable.GetGlobalSymbols(globalSymbol.Identifier));
             if (duplicateSymbols.Count >= 1)
             {
                 diagnostics.Add(DiagnosticMessage.GlobalSymbolHasDuplicates(globalSymbol, duplicateSymbols));
