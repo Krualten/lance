@@ -987,11 +987,17 @@ statement
     | iterativeStatement
     | jumpStatement
     | syncActionStatement
+    | operateGroupDirective
     | expression
     | variableAssignment
     | command+
     | procedure
     | keyword;
+
+// Structural metadata written by SINUMERIK Operate. These markers do not form an
+// executable NC scope; each line is accepted independently so incomplete groups
+// remain parseable while editing.
+operateGroupDirective: (GROUP_BEGIN | GROUP_END | GROUP_ADDEND) arguments?;
 
 ifStatement: IF expression (NEWLINE* scope ifStatementElse? lineStart? IF_END | gotoStatement);
 ifStatementElse: lineStart? ELSE NEWLINE* scope;

@@ -328,6 +328,12 @@ public interface ISinumerikNCVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitStatement([NotNull] SinumerikNCParser.StatementContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="SinumerikNCParser.operateGroupDirective"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitOperateGroupDirective([NotNull] SinumerikNCParser.OperateGroupDirectiveContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="SinumerikNCParser.ifStatement"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>

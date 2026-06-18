@@ -527,6 +527,16 @@ public interface ISinumerikNCListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitStatement([NotNull] SinumerikNCParser.StatementContext context);
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="SinumerikNCParser.operateGroupDirective"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterOperateGroupDirective([NotNull] SinumerikNCParser.OperateGroupDirectiveContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="SinumerikNCParser.operateGroupDirective"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitOperateGroupDirective([NotNull] SinumerikNCParser.OperateGroupDirectiveContext context);
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="SinumerikNCParser.ifStatement"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>

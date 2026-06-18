@@ -525,6 +525,42 @@ PCALL/_N_WKS_DIR/_N_LIBRARY_WPD/_N_TEST_HELPER_SPF(mainAxis)
             symbolUses.OfType<SymbolUse>().Select(use => use.Identifier).ToArray());
     }
 
+    [TestMethod]
+    public void OperateGroupMetadataDoesNotInterruptNcParsingOrCreateSymbolUses()
+    {
+        var code =
+            @"GROUP_BEGIN(0, ""Read data"", metadataVariable, 0)
+mainValue = sourceValue
+GROUP_ADDEND(0, 0)
+GROUP_END()
+";
+        var symbolUses = GetSymbolUses(code, out var parserDiagnostics);
+
+        Assert.AreEqual(
+            0,
+            parserDiagnostics.Count,
+            string.Join(Environment.NewLine, parserDiagnostics.Select(diagnostic => diagnostic.Message)));
+        CollectionAssert.AreEquivalent(
+            new[] { "mainValue", "sourceValue" },
+            symbolUses.OfType<SymbolUse>().Select(use => use.Identifier).ToArray());
+        Assert.AreEqual(0, symbolUses.OfType<ProcedureUse>().Count());
+    }
+
+    [TestMethod]
+    public void IncompleteOperateGroupRemainsParseableWhileEditing()
+    {
+        var code =
+            @"GROUP_BEGIN(0, ""Open group"", 0, 0)
+mainValue = sourceValue
+";
+        var symbolUses = GetSymbolUses(code, out var parserDiagnostics);
+
+        Assert.AreEqual(0, parserDiagnostics.Count);
+        CollectionAssert.AreEquivalent(
+            new[] { "mainValue", "sourceValue" },
+            symbolUses.OfType<SymbolUse>().Select(use => use.Identifier).ToArray());
+    }
+
     private static IList<AbstractSymbolUse> GetSymbolUses(
         string code,
         out IList<LspTypes.Diagnostic> parserDiagnostics)

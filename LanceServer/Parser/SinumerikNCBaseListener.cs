@@ -628,6 +628,18 @@ public partial class SinumerikNCBaseListener : ISinumerikNCListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitStatement([NotNull] SinumerikNCParser.StatementContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="SinumerikNCParser.operateGroupDirective"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterOperateGroupDirective([NotNull] SinumerikNCParser.OperateGroupDirectiveContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="SinumerikNCParser.operateGroupDirective"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitOperateGroupDirective([NotNull] SinumerikNCParser.OperateGroupDirectiveContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="SinumerikNCParser.ifStatement"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>

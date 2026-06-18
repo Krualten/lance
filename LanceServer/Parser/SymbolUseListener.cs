@@ -17,10 +17,21 @@ public class SymbolUseListener : SinumerikNCBaseListener
     
     private readonly PlaceholderPreprocessedDocument _document;
     private string? _activeCallPath;
+    private int _operateGroupDirectiveDepth;
     
     public SymbolUseListener(SymbolisedDocument document)
     {
         _document = document;
+    }
+
+    public override void EnterOperateGroupDirective(SinumerikNCParser.OperateGroupDirectiveContext context)
+    {
+        _operateGroupDirectiveDepth++;
+    }
+
+    public override void ExitOperateGroupDirective(SinumerikNCParser.OperateGroupDirectiveContext context)
+    {
+        _operateGroupDirectiveDepth--;
     }
     
     /// <summary>
@@ -29,6 +40,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
     /// </summary>
     public override void ExitUserVariableAssignment(SinumerikNCParser.UserVariableAssignmentContext context)
     {
+        if (IsOperateGroupMetadata) return;
         AddIdentifierIfNotPlaceholder(context.userVariableIdentifier());
     }
 
@@ -38,6 +50,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
     /// </summary>
     public override void ExitArrayVariableAssignment(SinumerikNCParser.ArrayVariableAssignmentContext context)
     {
+        if (IsOperateGroupMetadata) return;
         AddIdentifierIfNotPlaceholder(context.userVariableIdentifier());
     }
 
@@ -47,6 +60,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
     /// </summary>
     public override void ExitVariableUse(SinumerikNCParser.VariableUseContext context)
     {
+        if (IsOperateGroupMetadata) return;
         AddIdentifierIfNotPlaceholder(context.userVariableIdentifier());
     }
 
@@ -56,6 +70,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
     /// </summary>
     public override void ExitMacroUse(SinumerikNCParser.MacroUseContext context)
     {
+        if (IsOperateGroupMetadata) return;
         AddNameIfNotPlaceholder(context.NAME());
     }
 
@@ -65,6 +80,8 @@ public class SymbolUseListener : SinumerikNCBaseListener
     /// </summary>
     public override void ExitOwnProcedure(SinumerikNCParser.OwnProcedureContext context)
     {
+        if (IsOperateGroupMetadata) return;
+
         if (context.Parent is SinumerikNCParser.ProcedureCallContext)
         {
             return;
@@ -95,6 +112,8 @@ public class SymbolUseListener : SinumerikNCBaseListener
     /// </summary>
     public override void ExitProcedureCall(SinumerikNCParser.ProcedureCallContext context)
     {
+        if (IsOperateGroupMetadata) return;
+
         var procedure = context.program;
         var name = procedure?.NAME();
         if (name == null)
@@ -140,6 +159,8 @@ public class SymbolUseListener : SinumerikNCBaseListener
     /// </summary>
     public override void ExitCallPath(SinumerikNCParser.CallPathContext context)
     {
+        if (IsOperateGroupMetadata) return;
+
         var expression = context.expression();
         if (expression == null)
         {
@@ -163,6 +184,8 @@ public class SymbolUseListener : SinumerikNCBaseListener
     /// </summary>
     public override void ExitCall(SinumerikNCParser.CallContext context)
     {
+        if (IsOperateGroupMetadata) return;
+
         if (context.CALL_BLOCK() != null)
         {
             var programExpression = context.program;
@@ -187,6 +210,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
     /// </summary>
     public override void ExitIsoCall(SinumerikNCParser.IsoCallContext context)
     {
+        if (IsOperateGroupMetadata) return;
         AddLiteralProgramUse(context.expression());
     }
 
@@ -196,6 +220,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
     /// </summary>
     public override void ExitExternalCall(SinumerikNCParser.ExternalCallContext context)
     {
+        if (IsOperateGroupMetadata) return;
         AddLiteralProgramUse(context.expression());
     }
 
@@ -227,6 +252,8 @@ public class SymbolUseListener : SinumerikNCBaseListener
     /// </summary>
     public override void ExitModalCall(SinumerikNCParser.ModalCallContext context)
     {
+        if (IsOperateGroupMetadata) return;
+
         var name = context.NAME();
         if (name == null)
         {
@@ -257,6 +284,8 @@ public class SymbolUseListener : SinumerikNCBaseListener
     /// </summary>
     public override void ExitProcedureDeclaration(SinumerikNCParser.ProcedureDeclarationContext context)
     {
+        if (IsOperateGroupMetadata) return;
+
         var name = context.NAME();
         if (name == null) return;
 
@@ -280,6 +309,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
     /// </summary>
     public override void ExitGotoLabel(SinumerikNCParser.GotoLabelContext context)
     {
+        if (IsOperateGroupMetadata) return;
         AddNameIfNotPlaceholder(context.NAME());
     }
 
@@ -289,8 +319,11 @@ public class SymbolUseListener : SinumerikNCBaseListener
     /// </summary>
     public override void ExitGotoBlock(SinumerikNCParser.GotoBlockContext context)
     {
+        if (IsOperateGroupMetadata) return;
         SymbolUseTable.Add(new SymbolUse(context.GetText(), ParserHelper.GetRangeFromStartToEndToken(context.Start, context.Stop), _document.Information.Uri));
     }
+
+    private bool IsOperateGroupMetadata => _operateGroupDirectiveDepth > 0;
 
     private void AddTokenIfNotPlaceholder(IToken token)
     {
