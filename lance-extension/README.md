@@ -30,6 +30,8 @@ To change the colors of the syntax highlighting you can [change the theme](https
 
 There are settings to set the file extensions of the different file types of the language. Per default .def, .mpf and .spf files are configured. These files are loaded on startup to provide the respective insights. 
 
+Manufacturer cycles should be placed in a configured manufacturer cycles directory, such as `cma.dir`. Procedures found there are globally available and calls with parameters do not require an `EXTERN` declaration.
+
 There are also some settings for a customizable preprocessor. It can be used to replace project specific placeholders before the file is parsed.
 
 ## Known Issues

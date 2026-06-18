@@ -61,7 +61,7 @@
               "lance.symbols.manufacturerCyclesDirectories":{
                 "type": "array",
                 "default": ["cma.dir"],
-                "description": "The names of the folders in which the files contained are to be interpreted as global procedures.",
+                "description": "Folder names containing manufacturer cycles. Procedures in these folders are globally available and calls with parameters do not require EXTERN declarations.",
                 "order": 14
               },
               "lance.placeholderPreprocessor.fileExtensions":{

@@ -929,7 +929,7 @@ parameterDefinitionByValue: type NAME (ASSIGNMENT defaultValue=expression)?;
 parameterDefinitionByReference: VAR type NAME arrayDeclaration?;
 
 // declaration
-declaration: macroDeclaration | procedureDeclaration | variableDeclaration | variableRedecleration;
+declaration: macroDeclaration | procedureDeclaration | variableDeclaration | variableRedecleration | accessRights;
 
 macroDeclaration: MACRO_DEFINE NAME MACRO_AS macroValue;
 macroValue: statement |;
