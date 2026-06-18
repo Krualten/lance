@@ -78,6 +78,12 @@ public interface IWorkspace
     public IEnumerable<AbstractSymbol> GetSymbols(string symbolName, Uri documentOfReference);
 
     /// <summary>
+    /// Returns symbols matching both the identifier and syntactic kind of a symbol use.
+    /// </summary>
+    /// <param name="symbolUse">The symbol use to resolve.</param>
+    public IEnumerable<AbstractSymbol> GetSymbols(AbstractSymbolUse symbolUse);
+
+    /// <summary>
     /// Updates the raw content of the specified document.
     /// </summary>
     /// <param name="uri"></param>

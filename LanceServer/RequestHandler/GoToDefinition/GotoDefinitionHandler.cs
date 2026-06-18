@@ -15,7 +15,7 @@ public class GotoDefinitionHandler : IGotoDefinitionHandler
             return Array.Empty<LocationLink>();
         }
 
-        var locationLinks = workspace.GetSymbols(symbolUse.Identifier, document.Information.Uri).Select(symbol => new LocationLink
+        var locationLinks = workspace.GetSymbols(symbolUse).Select(symbol => new LocationLink
         {
             OriginSelectionRange = symbolUse.Range,
             TargetUri = FileUtil.UriToUriString(symbol.SourceDocument),

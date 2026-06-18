@@ -28,13 +28,15 @@ public class HoverHandler : IHoverHandler
         
         if (document.SymbolUseTable.TryGetSymbol(position, out var symbolUse))
         {
-            var symbols = workspace.GetSymbols(symbolUse.Identifier, document.Information.Uri).ToList();
+            var symbols = workspace.GetSymbols(symbolUse).ToList();
             if (symbols.Any())
             {
                 var hoverSymbol = symbols.First();
                 if (symbolUse is ProcedureUse procedureUse && hoverSymbol is ProcedureSymbol)
                 {
-                    var betterHoverSymbol = symbols.Select(symbol => symbol as ProcedureSymbol).FirstOrDefault(symbol => symbol!.ArgumentsMatchParameters(procedureUse.Arguments));
+                    var betterHoverSymbol = symbols
+                        .OfType<ProcedureSymbol>()
+                        .FirstOrDefault(symbol => symbol.ArgumentsMatchParameters(procedureUse.Arguments));
                     hoverSymbol = betterHoverSymbol ?? hoverSymbol;
                 }
                 

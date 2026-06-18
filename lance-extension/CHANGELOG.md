@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - corrected global symbol counts.
 - made procedure resolution deterministic when several project files define the same name.
 - avoided false duplicate warnings for valid procedure overrides in different workpieces or search-path directories.
+- prevented variables or macros with the same name from masking procedure calls during symbol resolution.
 
 ## [1.0.1] - 2023-06-03
 

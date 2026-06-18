@@ -22,7 +22,7 @@ public class SemanticTokenHandler : ISemanticTokenHandler
         
         foreach (var symbolUse in symbolUses)
         {
-            semanticTokens.AddRange(workspace.GetSymbols(symbolUse.Identifier, document.Information.Uri).Select(symbol => CreateSemanticToken(symbolUse.Range, symbol)));
+            semanticTokens.AddRange(workspace.GetSymbols(symbolUse).Select(symbol => CreateSemanticToken(symbolUse.Range, symbol)));
         }
 
         var orderedSemanticTokens = semanticTokens.Distinct().OrderBy(symbolUse => symbolUse.Line).ThenBy(symbolUse => symbolUse.StartCharacter);

@@ -290,6 +290,14 @@ public class Workspace : IWorkspace
     }
 
     /// <inheritdoc />
+    public IEnumerable<AbstractSymbol> GetSymbols(AbstractSymbolUse symbolUse)
+    {
+        return SymbolReferenceResolver.FilterCandidates(
+            symbolUse,
+            GetSymbols(symbolUse.Identifier, symbolUse.SourceDocument));
+    }
+
+    /// <inheritdoc />
     public void UpdateDocumentContent(Uri uri, string newContent)
     {
         var readDocument = GetReadDocument(uri);

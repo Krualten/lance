@@ -18,7 +18,7 @@ public class DiagnosticHandler : IDiagnosticHandler
         var symbolUses = document.SymbolUseTable.GetAll();
         foreach (var symbolUse in symbolUses)
         {
-            var referencedSymbols = workspace.GetSymbols(symbolUse.Identifier, document.Information.Uri).ToList();
+            var referencedSymbols = workspace.GetSymbols(symbolUse).ToList();
             if (referencedSymbols.Any())
             {
                 if (symbolUse.Identifier != referencedSymbols.First().Identifier)
