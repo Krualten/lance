@@ -21,7 +21,7 @@ public class Workspace : IWorkspace
     private readonly IConfigurationManager _configurationManager;
 
     private ConcurrentDictionary<Uri, Document.Document> _documents = new();
-    private readonly object _globalSymbolLock = new object();
+    private readonly ReaderWriterLockSlim _globalSymbolLock = new();
 
     public Workspace(IParserManager parserManager, IPlaceholderPreprocessor placeholderPreprocessor, IConfigurationManager configurationManager)
     {
@@ -60,29 +60,36 @@ public class Workspace : IWorkspace
         }
             
         var symbolList = _parserManager.GetSymbolTableForDocument(parsedDocument).ToList();
-            
-        //update symbol table
-        lock (_globalSymbolLock)
+        
+        // Separar operaciones locales de las globales
+        var localSymbols = new List<AbstractSymbol>();
+        var newGlobalSymbols = symbolList.Where(symbol => symbol is ProcedureSymbol).ToList();
+
+        if (parsedDocument.Information.DocumentType is DocumentType.Definition or DocumentType.MainProcedure)
+        {
+            newGlobalSymbols.AddRange(symbolList.Where(symbol => symbol is VariableSymbol or MacroSymbol));
+        }
+
+        localSymbols = symbolList.Except(newGlobalSymbols).ToList();
+        
+        // Usar ReaderWriterLockSlim para mejor concurrencia
+        // Solo escribir cuando sea necesario
+        _globalSymbolLock.EnterWriteLock();
+        try
         {
             GlobalSymbolTable.DeleteGlobalSymbolsOfDocument(uri);
-
-            var newGlobalSymbols = symbolList.Where(symbol => symbol is ProcedureSymbol).ToList();
-
-            if (parsedDocument.Information.DocumentType is DocumentType.Definition or DocumentType.MainProcedure)
-            {
-                newGlobalSymbols.AddRange(symbolList.Where(symbol => symbol is VariableSymbol or MacroSymbol));
-            }
-
-            symbolList = symbolList.Except(newGlobalSymbols).ToList();
-        
             foreach (var newSymbol in newGlobalSymbols)
             {
                 GlobalSymbolTable.AddSymbol(newSymbol);
             }
         }
+        finally
+        {
+            _globalSymbolLock.ExitWriteLock();
+        }
 
         var symbolTable = new SymbolTable();
-        foreach (var symbol in symbolList.Where(symbol => !symbolTable.TryAddSymbol(symbol)))
+        foreach (var symbol in localSymbols.Where(symbol => !symbolTable.TryAddSymbol(symbol)))
         {
             symbolTable.TryGetSymbol(symbol.Identifier, out var existingSymbol);
             parsedDocument.ParserDiagnostics.Add(DiagnosticMessage.LocalSymbolAlreadyExists(symbol, existingSymbol!));
@@ -173,18 +180,19 @@ public class Workspace : IWorkspace
     /// <inheritdoc/>
     public Document.Document GetDocument(Uri uri)
     {
+        // Primer intento sin lock (fast path)
         if (_documents.TryGetValue(uri, out var document))
         {
             return document;
         }
 
         var config = _configurationManager.SymbolTableConfiguration;
-
         var documentInformation = new DocumentInformation(uri, config);
         var newDocument = new Document.Document(documentInformation);
-        _documents.TryAdd(uri, newDocument);
         
-        return newDocument;
+        // Usar AddOrUpdate para evitar duplicados
+        document = _documents.AddOrUpdate(uri, newDocument, (_, existing) => existing);
+        return document;
     }
     
     /// <inheritdoc />
@@ -216,7 +224,10 @@ public class Workspace : IWorkspace
             _documents = new ConcurrentDictionary<Uri, Document.Document>(MAX_PARALLEL, documentUris.Count);
         }
 
-        documentUris = documentUris.Select(GetDocument).OrderBy(document => document.Information.DocumentType).Select(document => document.Information.Uri).ToList();
+        documentUris = documentUris.Select(GetDocument)
+            .OrderBy(document => document.Information.DocumentType)
+            .Select(document => document.Information.Uri)
+            .ToList();
 
         var maxCount = documentUris.Count;
         var currentCount = 0;
@@ -225,7 +236,15 @@ public class Workspace : IWorkspace
         var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = MAX_PARALLEL };
         Parallel.ForEach(documentUris, parallelOptions, uri => 
         {
-            GetSymbolisedDocument(uri);
+            try
+            {
+                GetSymbolisedDocument(uri);
+            }
+            catch (Exception ex)
+            {
+                // Log de errores para mejor debugging
+                System.Console.Error.WriteLine($"Error processing {uri}: {ex.Message}");
+            }
             
             lock (lockObject)
             {
@@ -252,7 +271,17 @@ public class Workspace : IWorkspace
             symbols.Add(symbol);
         }
 
-        symbols.AddRange(GlobalSymbolTable.GetGlobalSymbols(symbolName));
+        // Usar read lock para acceder a símbolos globales
+        _globalSymbolLock.EnterReadLock();
+        try
+        {
+            symbols.AddRange(GlobalSymbolTable.GetGlobalSymbols(symbolName));
+        }
+        finally
+        {
+            _globalSymbolLock.ExitReadLock();
+        }
+        
         return symbols;
     }
 
@@ -273,6 +302,40 @@ public class Workspace : IWorkspace
 
     public IEnumerable<Uri> GetAllDocumentUris()
     {
-        return _documents.Select(pair => pair.Key);
+        return _documents.Keys;  // Más eficiente que Select
+    }
+
+    /// <summary>
+    /// Limpia un documento del caché. Útil para liberar memoria de documentos que ya no se necesitan.
+    /// </summary>
+    public void ClearDocument(Uri uri)
+    {
+        _documents.TryRemove(uri, out _);
+        
+        _globalSymbolLock.EnterWriteLock();
+        try
+        {
+            GlobalSymbolTable.DeleteGlobalSymbolsOfDocument(uri);
+        }
+        finally
+        {
+            _globalSymbolLock.ExitWriteLock();
+        }
+    }
+
+    /// <summary>
+    /// Obtiene el estado del caché para debugging.
+    /// </summary>
+    public (int CachedDocuments, int GlobalSymbols) GetCacheStats()
+    {
+        _globalSymbolLock.EnterReadLock();
+        try
+        {
+            return (_documents.Count, GlobalSymbolTable.Count);
+        }
+        finally
+        {
+            _globalSymbolLock.ExitReadLock();
+        }
     }
 }
