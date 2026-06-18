@@ -16,6 +16,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
     public IList<AbstractSymbolUse> SymbolUseTable { get; } = new List<AbstractSymbolUse>();
     
     private readonly PlaceholderPreprocessedDocument _document;
+    private string? _activeCallPath;
     
     public SymbolUseListener(SymbolisedDocument document)
     {
@@ -75,7 +76,36 @@ public class SymbolUseListener : SinumerikNCBaseListener
 
         var arguments = context.arguments() != null ? context.arguments().expression().Select(_ => new ProcedureUseArgument()).ToArray() : Array.Empty<ProcedureUseArgument>();
 
-        SymbolUseTable.Add(new ProcedureUse(token.Text, ParserHelper.GetRangeForToken(token), _document.Information.Uri, arguments));
+        SymbolUseTable.Add(new ProcedureUse(
+            token.Text,
+            ParserHelper.GetRangeForToken(token),
+            _document.Information.Uri,
+            arguments,
+            _activeCallPath));
+    }
+
+    /// <summary>
+    /// Tracks literal CALLPATH values for subsequent procedure calls. Dynamic expressions
+    /// cannot be resolved statically and therefore clear the inferred path.
+    /// </summary>
+    public override void ExitCallPath(SinumerikNCParser.CallPathContext context)
+    {
+        var expression = context.expression();
+        if (expression == null)
+        {
+            _activeCallPath = null;
+            return;
+        }
+
+        var text = expression.GetText();
+        if (text.Length >= 2 && text.StartsWith('"') && text.EndsWith('"'))
+        {
+            var literalPath = text[1..^1].Trim();
+            _activeCallPath = string.IsNullOrEmpty(literalPath) ? null : literalPath;
+            return;
+        }
+
+        _activeCallPath = null;
     }
 
     /// <summary>

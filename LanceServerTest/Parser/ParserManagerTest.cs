@@ -1,5 +1,6 @@
 ﻿using Antlr4.Runtime.Tree;
 using LanceServer.Core.Document;
+using LanceServer.Core.Symbol;
 using LanceServer.Parser;
 using LanceServerTest.Core.Workspace;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -200,5 +201,39 @@ public class ParserManagerTest
         Assert.AreEqual("definedMacro", actualSymbols[symbolPosition++].Identifier);
         Assert.AreEqual("declaredVariable", actualSymbols[symbolPosition++].Identifier);
         Assert.AreEqual("definedVariable", actualSymbols[symbolPosition].Identifier);
+    }
+
+    [TestMethod]
+    public void LiteralCallPathIsAttachedToFollowingProcedureUsesUntilReset()
+    {
+        var code =
+            @"CALLPATH(""/_N_WKS_DIR/_N_LIBRARY_WPD"")
+HELPER()
+CALLPATH()
+OTHER()
+";
+        var preprocessedDocument = new PreprocessedDocument(
+            new DocumentInformationMock(new Uri("file:///MAIN.MPF"), ".mpf", DocumentType.MainProcedure),
+            code,
+            code,
+            new PlaceholderTable(new Dictionary<string, string>()),
+            "");
+        var parserManager = new ParserManager();
+        var parserResult = parserManager.Parse(preprocessedDocument);
+        var parsedDocument = new ParsedDocument(
+            preprocessedDocument,
+            parserResult.ParseTree,
+            parserResult.Diagnostics);
+        var symbolisedDocument = new SymbolisedDocument(parsedDocument, new SymbolTable());
+
+        var procedureUses = parserManager
+            .GetSymbolUseForDocument(symbolisedDocument)
+            .OfType<ProcedureUse>()
+            .ToList();
+
+        Assert.AreEqual(0, parserResult.Diagnostics.Count);
+        Assert.AreEqual(2, procedureUses.Count);
+        Assert.AreEqual("/_N_WKS_DIR/_N_LIBRARY_WPD", procedureUses[0].CallPath);
+        Assert.IsNull(procedureUses[1].CallPath);
     }
 }

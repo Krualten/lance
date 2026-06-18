@@ -20,12 +20,23 @@ public class ProcedureUse : AbstractSymbolUse
     /// The arguments for the procedure which is called
     /// </summary>
     public ProcedureUseArgument[] Arguments { get; }
+
+    /// <summary>
+    /// Statically known CALLPATH directory active at this procedure call, if any.
+    /// </summary>
+    public string? CallPath { get; }
     
-    public ProcedureUse(string identifier, Range range, Uri sourceDocument, ProcedureUseArgument[] arguments)
+    public ProcedureUse(
+        string identifier,
+        Range range,
+        Uri sourceDocument,
+        ProcedureUseArgument[] arguments,
+        string? callPath = null)
     {
         Identifier = identifier;
         Range = range;
         SourceDocument = sourceDocument;
         Arguments = arguments;
+        CallPath = callPath;
     }
 }

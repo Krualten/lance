@@ -292,9 +292,20 @@ public class Workspace : IWorkspace
     /// <inheritdoc />
     public IEnumerable<AbstractSymbol> GetSymbols(AbstractSymbolUse symbolUse)
     {
-        return SymbolReferenceResolver.FilterCandidates(
+        var candidates = SymbolReferenceResolver.FilterCandidates(
             symbolUse,
             GetSymbols(symbolUse.Identifier, symbolUse.SourceDocument));
+
+        if (symbolUse is ProcedureUse procedureUse)
+        {
+            return SinumerikProgramSearchPath.OrderCandidates(
+                candidates,
+                symbolUse.SourceDocument,
+                _configurationManager.SymbolTableConfiguration.ManufacturerCyclesDirectories,
+                procedureUse.CallPath);
+        }
+
+        return candidates;
     }
 
     /// <inheritdoc />

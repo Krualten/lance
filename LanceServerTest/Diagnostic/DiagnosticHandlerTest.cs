@@ -11,6 +11,55 @@ namespace LanceServerTest.Diagnostic;
 [TestClass]
 public class DiagnosticHandlerTest
 {
+    [TestMethod]
+    public void LiteralCallPathResolvesProcedureInAnotherWorkpiece()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "lance-callpath-" + Guid.NewGuid());
+        var workpiecesDirectory = Path.Combine(directory, "WKS.DIR");
+        var mainDirectory = Path.Combine(workpiecesDirectory, "MAIN.WPD");
+        var libraryDirectory = Path.Combine(workpiecesDirectory, "LIBRARY.WPD");
+        Directory.CreateDirectory(mainDirectory);
+        Directory.CreateDirectory(libraryDirectory);
+        var helperPath = Path.Combine(libraryDirectory, "TEST_HELPER.SPF");
+        var mainPath = Path.Combine(mainDirectory, "TEST_MAIN.MPF");
+        File.WriteAllText(
+            helperPath,
+            @"PROC TEST_HELPER()
+RET
+ENDPROC
+");
+        File.WriteAllText(
+            mainPath,
+            @"PROC TEST_MAIN()
+CALLPATH(""/_N_WKS_DIR/_N_LIBRARY_WPD"")
+TEST_HELPER()
+RET
+ENDPROC
+");
+
+        try
+        {
+            var configurationManager = CreateConfigurationManager();
+            var workspace = new Workspace(
+                new ParserManager(),
+                new PlaceholderPreprocessor(configurationManager),
+                configurationManager);
+            workspace.GetSymbolisedDocument(new Uri(helperPath));
+            var mainDocument = workspace.GetSymbolUseExtractedDocument(new Uri(mainPath));
+
+            var diagnostics = new DiagnosticHandler().HandleRequest(mainDocument, workspace).Items;
+
+            Assert.AreEqual(0, mainDocument.ParserDiagnostics.Count);
+            Assert.IsFalse(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.Equals("Cannot resolve symbol TEST_HELPER.", StringComparison.Ordinal)));
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
     [DataTestMethod]
     [DataRow("cus.dir")]
     [DataRow("cma.dir")]

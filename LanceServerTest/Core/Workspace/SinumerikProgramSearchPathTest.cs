@@ -65,6 +65,30 @@ public class SinumerikProgramSearchPathTest
         Assert.AreEqual(CreatePath("NC", "OEM_CYCLES", "HELPER.SPF"), orderedPaths[0]);
     }
 
+    [TestMethod]
+    public void CallPathDirectoryIsSearchedBeforeUserCycles()
+    {
+        var reference = CreateUri("NC", "WKS.DIR", "PART.WPD", "MAIN.MPF");
+        var candidates = new[]
+        {
+            CreateProcedure("NC", "CUS.DIR", "HELPER.SPF"),
+            CreateProcedure("NC", "WKS.DIR", "LIBRARY.WPD", "HELPER.SPF")
+        };
+
+        var orderedPaths = SinumerikProgramSearchPath
+            .OrderCandidates(
+                candidates,
+                reference,
+                Array.Empty<string>(),
+                "/_N_WKS_DIR/_N_LIBRARY_WPD")
+            .Select(symbol => symbol.SourceDocument.LocalPath)
+            .ToList();
+
+        Assert.AreEqual(
+            CreatePath("NC", "WKS.DIR", "LIBRARY.WPD", "HELPER.SPF"),
+            orderedPaths[0]);
+    }
+
     private static ProcedureSymbol CreateProcedure(params string[] pathParts)
     {
         var range = new Range

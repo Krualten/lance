@@ -14,11 +14,12 @@ public static class SinumerikProgramSearchPath
     private const int CurrentDocumentRank = 0;
     private const int CurrentDirectoryRank = 1;
     private const int SubprogramDirectoryRank = 2;
-    private const int UserCyclesDirectoryRank = 3;
-    private const int ManufacturerCyclesDirectoryRank = 4;
-    private const int StandardCyclesDirectoryRank = 5;
-    private const int OtherDirectoryRank = 6;
-    private const int NonProcedureRank = 7;
+    private const int CallPathDirectoryRank = 3;
+    private const int UserCyclesDirectoryRank = 4;
+    private const int ManufacturerCyclesDirectoryRank = 5;
+    private const int StandardCyclesDirectoryRank = 6;
+    private const int OtherDirectoryRank = 7;
+    private const int NonProcedureRank = 8;
 
     /// <summary>
     /// Orders matching global symbols so consumers see the procedure that SINUMERIK would
@@ -27,15 +28,22 @@ public static class SinumerikProgramSearchPath
     public static IEnumerable<AbstractSymbol> OrderCandidates(
         IEnumerable<AbstractSymbol> candidates,
         Uri documentOfReference,
-        IEnumerable<string> configuredManufacturerCyclesDirectories)
+        IEnumerable<string> configuredManufacturerCyclesDirectories,
+        string? callPath = null)
     {
         var referenceDirectory = Path.GetDirectoryName(documentOfReference.LocalPath) ?? string.Empty;
         var manufacturerDirectories = configuredManufacturerCyclesDirectories
             .Select(NormalizeDirectoryName)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var normalizedCallPath = NormalizeProgramDirectoryPath(callPath);
 
         return candidates
-            .OrderBy(candidate => GetRank(candidate, documentOfReference, referenceDirectory, manufacturerDirectories))
+            .OrderBy(candidate => GetRank(
+                candidate,
+                documentOfReference,
+                referenceDirectory,
+                manufacturerDirectories,
+                normalizedCallPath))
             .ThenBy(candidate => candidate.SourceDocument.LocalPath, StringComparer.OrdinalIgnoreCase)
             .ThenBy(candidate => candidate.IdentifierRange.Start.Line)
             .ThenBy(candidate => candidate.IdentifierRange.Start.Character);
@@ -45,7 +53,8 @@ public static class SinumerikProgramSearchPath
         AbstractSymbol candidate,
         Uri documentOfReference,
         string referenceDirectory,
-        ISet<string> manufacturerDirectories)
+        ISet<string> manufacturerDirectories,
+        IReadOnlyList<string> normalizedCallPath)
     {
         if (candidate is not ProcedureSymbol)
         {
@@ -61,6 +70,11 @@ public static class SinumerikProgramSearchPath
         if (candidateDirectory.Equals(referenceDirectory, StringComparison.OrdinalIgnoreCase))
         {
             return CurrentDirectoryRank;
+        }
+
+        if (DirectoryMatchesCallPath(candidateDirectory, normalizedCallPath))
+        {
+            return CallPathDirectoryRank;
         }
 
         var directoryName = NormalizeDirectoryName(Path.GetFileName(candidateDirectory));
@@ -94,5 +108,49 @@ public static class SinumerikProgramSearchPath
         }
 
         return normalized;
+    }
+
+    internal static IReadOnlyList<string> NormalizeProgramDirectoryPath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return Array.Empty<string>();
+        }
+
+        return path
+            .Replace('\\', '/')
+            .Split('/', StringSplitOptions.RemoveEmptyEntries)
+            .Select(NormalizeDirectoryName)
+            .Where(segment => !string.IsNullOrEmpty(segment))
+            .ToArray();
+    }
+
+    private static bool DirectoryMatchesCallPath(
+        string candidateDirectory,
+        IReadOnlyList<string> normalizedCallPath)
+    {
+        if (normalizedCallPath.Count == 0)
+        {
+            return false;
+        }
+
+        var candidateSegments = NormalizeProgramDirectoryPath(candidateDirectory);
+        if (candidateSegments.Count < normalizedCallPath.Count)
+        {
+            return false;
+        }
+
+        var offset = candidateSegments.Count - normalizedCallPath.Count;
+        for (var index = 0; index < normalizedCallPath.Count; index++)
+        {
+            if (!candidateSegments[offset + index].Equals(
+                    normalizedCallPath[index],
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
