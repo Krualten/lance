@@ -97,15 +97,43 @@ public class SymbolUseListener : SinumerikNCBaseListener
             return;
         }
 
-        var text = expression.GetText();
-        if (text.Length >= 2 && text.StartsWith('"') && text.EndsWith('"'))
+        if (TryGetStringLiteral(expression.GetText(), out var literalPath))
         {
-            var literalPath = text[1..^1].Trim();
+            literalPath = literalPath.Trim();
             _activeCallPath = string.IsNullOrEmpty(literalPath) ? null : literalPath;
             return;
         }
 
         _activeCallPath = null;
+    }
+
+    /// <summary>
+    /// Resolves literal indirect CALL targets. Variable-based indirect calls remain ordinary
+    /// variable uses because their runtime value cannot be inferred safely.
+    /// </summary>
+    public override void ExitCall(SinumerikNCParser.CallContext context)
+    {
+        var expression = context.expression();
+        if (expression == null || !TryGetStringLiteral(expression.GetText(), out var programReference))
+        {
+            return;
+        }
+
+        if (!SinumerikProgramReference.TryParse(
+                programReference,
+                out var identifier,
+                out var explicitDirectoryPath))
+        {
+            return;
+        }
+
+        SymbolUseTable.Add(new ProcedureUse(
+            identifier,
+            ParserHelper.GetRangeFromStartToEndToken(expression.Start, expression.Stop),
+            _document.Information.Uri,
+            Array.Empty<ProcedureUseArgument>(),
+            _activeCallPath,
+            explicitDirectoryPath));
     }
 
     /// <summary>
@@ -164,5 +192,17 @@ public class SymbolUseListener : SinumerikNCBaseListener
         }
 
         AddTokenIfNotPlaceholder(name.Symbol);
+    }
+
+    private static bool TryGetStringLiteral(string text, out string value)
+    {
+        value = string.Empty;
+        if (text.Length < 2 || !text.StartsWith('"') || !text.EndsWith('"'))
+        {
+            return false;
+        }
+
+        value = text[1..^1];
+        return true;
     }
 }

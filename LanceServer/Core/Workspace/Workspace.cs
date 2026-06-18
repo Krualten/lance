@@ -302,7 +302,8 @@ public class Workspace : IWorkspace
                 candidates,
                 symbolUse.SourceDocument,
                 _configurationManager.SymbolTableConfiguration.ManufacturerCyclesDirectories,
-                procedureUse.CallPath);
+                procedureUse.CallPath,
+                procedureUse.ExplicitDirectoryPath);
         }
 
         return candidates;

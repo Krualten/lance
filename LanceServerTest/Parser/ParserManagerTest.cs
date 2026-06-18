@@ -236,4 +236,36 @@ OTHER()
         Assert.AreEqual("/_N_WKS_DIR/_N_LIBRARY_WPD", procedureUses[0].CallPath);
         Assert.IsNull(procedureUses[1].CallPath);
     }
+
+    [TestMethod]
+    public void LiteralIndirectCallCreatesProcedureUseWithExplicitPath()
+    {
+        var code = @"CALL ""/_N_WKS_DIR/_N_LIBRARY_WPD/_N_TEST_HELPER_SPF""" + Environment.NewLine;
+        var preprocessedDocument = new PreprocessedDocument(
+            new DocumentInformationMock(new Uri("file:///MAIN.MPF"), ".mpf", DocumentType.MainProcedure),
+            code,
+            code,
+            new PlaceholderTable(new Dictionary<string, string>()),
+            "");
+        var parserManager = new ParserManager();
+        var parserResult = parserManager.Parse(preprocessedDocument);
+        var parsedDocument = new ParsedDocument(
+            preprocessedDocument,
+            parserResult.ParseTree,
+            parserResult.Diagnostics);
+        var symbolisedDocument = new SymbolisedDocument(parsedDocument, new SymbolTable());
+
+        var procedureUse = parserManager
+            .GetSymbolUseForDocument(symbolisedDocument)
+            .OfType<ProcedureUse>()
+            .Single();
+
+        Assert.AreEqual(
+            0,
+            parserResult.Diagnostics.Count,
+            string.Join(Environment.NewLine, parserResult.Diagnostics.Select(diagnostic => diagnostic.Message)));
+        Assert.AreEqual("TEST_HELPER", procedureUse.Identifier);
+        Assert.AreEqual("/_N_WKS_DIR/_N_LIBRARY_WPD", procedureUse.ExplicitDirectoryPath);
+        Assert.AreEqual(0, procedureUse.Arguments.Length);
+    }
 }

@@ -11,6 +11,7 @@ public static class SinumerikProgramSearchPath
     internal static readonly ISet<string> StandardCycleDirectories =
         new HashSet<string>(new[] { "cus", "cma", "cst" }, StringComparer.OrdinalIgnoreCase);
 
+    private const int ExplicitDirectoryRank = -1;
     private const int CurrentDocumentRank = 0;
     private const int CurrentDirectoryRank = 1;
     private const int SubprogramDirectoryRank = 2;
@@ -29,13 +30,15 @@ public static class SinumerikProgramSearchPath
         IEnumerable<AbstractSymbol> candidates,
         Uri documentOfReference,
         IEnumerable<string> configuredManufacturerCyclesDirectories,
-        string? callPath = null)
+        string? callPath = null,
+        string? explicitDirectoryPath = null)
     {
         var referenceDirectory = Path.GetDirectoryName(documentOfReference.LocalPath) ?? string.Empty;
         var manufacturerDirectories = configuredManufacturerCyclesDirectories
             .Select(NormalizeDirectoryName)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
         var normalizedCallPath = NormalizeProgramDirectoryPath(callPath);
+        var normalizedExplicitDirectoryPath = NormalizeProgramDirectoryPath(explicitDirectoryPath);
 
         return candidates
             .OrderBy(candidate => GetRank(
@@ -43,7 +46,8 @@ public static class SinumerikProgramSearchPath
                 documentOfReference,
                 referenceDirectory,
                 manufacturerDirectories,
-                normalizedCallPath))
+                normalizedCallPath,
+                normalizedExplicitDirectoryPath))
             .ThenBy(candidate => candidate.SourceDocument.LocalPath, StringComparer.OrdinalIgnoreCase)
             .ThenBy(candidate => candidate.IdentifierRange.Start.Line)
             .ThenBy(candidate => candidate.IdentifierRange.Start.Character);
@@ -54,7 +58,8 @@ public static class SinumerikProgramSearchPath
         Uri documentOfReference,
         string referenceDirectory,
         ISet<string> manufacturerDirectories,
-        IReadOnlyList<string> normalizedCallPath)
+        IReadOnlyList<string> normalizedCallPath,
+        IReadOnlyList<string> normalizedExplicitDirectoryPath)
     {
         if (candidate is not ProcedureSymbol)
         {
@@ -67,12 +72,17 @@ public static class SinumerikProgramSearchPath
         }
 
         var candidateDirectory = Path.GetDirectoryName(candidate.SourceDocument.LocalPath) ?? string.Empty;
+        if (DirectoryMatchesPath(candidateDirectory, normalizedExplicitDirectoryPath))
+        {
+            return ExplicitDirectoryRank;
+        }
+
         if (candidateDirectory.Equals(referenceDirectory, StringComparison.OrdinalIgnoreCase))
         {
             return CurrentDirectoryRank;
         }
 
-        if (DirectoryMatchesCallPath(candidateDirectory, normalizedCallPath))
+        if (DirectoryMatchesPath(candidateDirectory, normalizedCallPath))
         {
             return CallPathDirectoryRank;
         }
@@ -125,7 +135,7 @@ public static class SinumerikProgramSearchPath
             .ToArray();
     }
 
-    private static bool DirectoryMatchesCallPath(
+    private static bool DirectoryMatchesPath(
         string candidateDirectory,
         IReadOnlyList<string> normalizedCallPath)
     {

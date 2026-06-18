@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - prevented variables or macros with the same name from masking procedure calls during symbol resolution.
 - fixed command-line configuration loading when `--config-file` points outside the current directory.
 - resolved procedure calls through statically known `CALLPATH` directories.
+- resolved literal indirect `CALL` targets, including explicit NC program paths.
 
 ## [1.0.1] - 2023-06-03
 

@@ -25,18 +25,25 @@ public class ProcedureUse : AbstractSymbolUse
     /// Statically known CALLPATH directory active at this procedure call, if any.
     /// </summary>
     public string? CallPath { get; }
+
+    /// <summary>
+    /// Directory explicitly encoded in a literal indirect CALL program path, if any.
+    /// </summary>
+    public string? ExplicitDirectoryPath { get; }
     
     public ProcedureUse(
         string identifier,
         Range range,
         Uri sourceDocument,
         ProcedureUseArgument[] arguments,
-        string? callPath = null)
+        string? callPath = null,
+        string? explicitDirectoryPath = null)
     {
         Identifier = identifier;
         Range = range;
         SourceDocument = sourceDocument;
         Arguments = arguments;
         CallPath = callPath;
+        ExplicitDirectoryPath = explicitDirectoryPath;
     }
 }

@@ -1,5 +1,6 @@
 using LanceServer.Core.Configuration;
 using LanceServer.Core.Configuration.DataModel;
+using LanceServer.Core.Symbol;
 using LanceServer.Core.Workspace;
 using LanceServer.Parser;
 using LanceServer.Preprocessor;
@@ -50,6 +51,55 @@ ENDPROC
             var diagnostics = new DiagnosticHandler().HandleRequest(mainDocument, workspace).Items;
 
             Assert.AreEqual(0, mainDocument.ParserDiagnostics.Count);
+            Assert.IsFalse(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.Equals("Cannot resolve symbol TEST_HELPER.", StringComparison.Ordinal)));
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [TestMethod]
+    public void LiteralIndirectCallResolvesExplicitProcedurePath()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "lance-indirect-call-" + Guid.NewGuid());
+        var workpiecesDirectory = Path.Combine(directory, "WKS.DIR");
+        var mainDirectory = Path.Combine(workpiecesDirectory, "MAIN.WPD");
+        var libraryDirectory = Path.Combine(workpiecesDirectory, "LIBRARY.WPD");
+        Directory.CreateDirectory(mainDirectory);
+        Directory.CreateDirectory(libraryDirectory);
+        var localHelperPath = Path.Combine(mainDirectory, "TEST_HELPER.SPF");
+        var libraryHelperPath = Path.Combine(libraryDirectory, "TEST_HELPER.SPF");
+        var mainPath = Path.Combine(mainDirectory, "TEST_MAIN.MPF");
+        File.WriteAllText(localHelperPath, "PROC TEST_HELPER()" + Environment.NewLine + "RET" + Environment.NewLine + "ENDPROC");
+        File.WriteAllText(libraryHelperPath, "PROC TEST_HELPER()" + Environment.NewLine + "RET" + Environment.NewLine + "ENDPROC");
+        File.WriteAllText(
+            mainPath,
+            @"PROC TEST_MAIN()
+CALL ""/_N_WKS_DIR/_N_LIBRARY_WPD/_N_TEST_HELPER_SPF""
+RET
+ENDPROC
+");
+
+        try
+        {
+            var configurationManager = CreateConfigurationManager();
+            var workspace = new Workspace(
+                new ParserManager(),
+                new PlaceholderPreprocessor(configurationManager),
+                configurationManager);
+            workspace.GetSymbolisedDocument(new Uri(localHelperPath));
+            var libraryUri = new Uri(libraryHelperPath);
+            workspace.GetSymbolisedDocument(libraryUri);
+            var mainDocument = workspace.GetSymbolUseExtractedDocument(new Uri(mainPath));
+            var procedureUse = mainDocument.SymbolUseTable.GetAll().OfType<ProcedureUse>().Single();
+
+            var resolvedProcedure = workspace.GetSymbols(procedureUse).OfType<ProcedureSymbol>().First();
+            var diagnostics = new DiagnosticHandler().HandleRequest(mainDocument, workspace).Items;
+
+            Assert.AreEqual(libraryUri, resolvedProcedure.SourceDocument);
             Assert.IsFalse(
                 diagnostics.Any(diagnostic =>
                     diagnostic.Message.Equals("Cannot resolve symbol TEST_HELPER.", StringComparison.Ordinal)));
