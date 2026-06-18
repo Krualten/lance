@@ -1,4 +1,5 @@
-﻿using System.Text;
+using System.Collections.Concurrent;
+using System.Text;
 using System.Text.RegularExpressions;
 using LanceServer.Core.Configuration;
 using LanceServer.Core.Document;
@@ -9,6 +10,7 @@ namespace LanceServer.Preprocessor;
 public class PlaceholderPreprocessor : IPlaceholderPreprocessor
 {
     private readonly IConfigurationManager _configurationManager;
+    private static readonly ConcurrentDictionary<string, Regex> CompiledRegexes = new();
 
     public PlaceholderPreprocessor(IConfigurationManager configurationManager)
     {
@@ -28,8 +30,8 @@ public class PlaceholderPreprocessor : IPlaceholderPreprocessor
         }
 
         var resultBuilder = new StringBuilder();
+        var rawLines = Regex.Split(document.RawContent, @"(?<=\n)");
         
-        var rawLines = Regex.Split(document.RawContent, @"(?<=[\n])");
         foreach (var placeholder in preprocessorConfiguration.Placeholders)
         {
             var pattern = placeholder;
@@ -38,30 +40,45 @@ public class PlaceholderPreprocessor : IPlaceholderPreprocessor
                 pattern = Regex.Escape(placeholder);
             }
 
+            var regex = GetOrAddRegex(pattern);
+
             foreach (var rawLine in rawLines)
             {
-                var matches = Regex.Matches(rawLine, pattern).Select(match => match.Value);
-                var line = rawLine;
-                foreach (var match in matches)
+                var matches = regex.Matches(rawLine);
+                if (matches.Count == 0)
                 {
-                    if (rawLine.Trim() == match)
+                    resultBuilder.Append(rawLine);
+                    continue;
+                }
+
+                var line = rawLine;
+                foreach (Match match in matches)
+                {
+                    if (rawLine.Trim() == match.Value)
                     {
-                        line = Regex.Replace(line, match, "");
+                        line = line.Replace(match.Value, "", StringComparison.Ordinal);
                     }
                     else
                     {
-                        var processedMatch = Regex.Replace(match, "[^a-zA-Z0-9_]", "_");
-                        line = Regex.Replace(line, match, processedMatch);
-                        placeholders.TryAdd(processedMatch, match);
+                        var processedMatch = Regex.Replace(match.Value, "[^a-zA-Z0-9_]", "_");
+                        line = line.Replace(match.Value, processedMatch, StringComparison.Ordinal);
+                        placeholders.TryAdd(processedMatch, match.Value);
                     }
                 }
-
                 resultBuilder.Append(line);
             }
         }
 
-        placeholders = placeholders.OrderByDescending(pair => pair.Key.Length).ToDictionary(pair => pair.Key, pair => pair.Value);
+        placeholders = placeholders
+            .OrderByDescending(pair => pair.Key.Length)
+            .ToDictionary(pair => pair.Key, pair => pair.Value);
             
         return new PlaceholderPreprocessedDocument(document, resultBuilder.ToString(), new PlaceholderTable(placeholders));
+    }
+
+    private static Regex GetOrAddRegex(string pattern)
+    {
+        return CompiledRegexes.GetOrAdd(pattern, p => 
+            new Regex(p, RegexOptions.Compiled | RegexOptions.CultureInvariant));
     }
 }
