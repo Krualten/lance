@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-06-18
+
+### Added
+
+- support for standalone GUD access-right directives.
+- support for globally available manufacturer cycles without unnecessary `EXTERN` declarations.
+- configurable manufacturer-cycle directories.
+- SINUMERIK-aware procedure resolution using the standard directory search order.
+- regression coverage for incomplete code, GUD variables, manufacturer cycles and project-wide procedure resolution.
+
+### Changed
+
+- improved workspace indexing, caching and concurrent symbol-table access for large projects.
+- synchronized extension dependencies and lockfile metadata.
+
+### Fixed
+
+- prevented symbol extraction crashes while editing incomplete declarations.
+- preserved parser diagnostics when recovering from incomplete code.
+- corrected global symbol counts.
+- made procedure resolution deterministic when several project files define the same name.
+
 ## [1.0.1] - 2023-06-03
 
 ### Added 
