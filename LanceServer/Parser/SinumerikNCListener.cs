@@ -447,6 +447,18 @@ public interface ISinumerikNCListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitUserVariableAssignment([NotNull] SinumerikNCParser.UserVariableAssignmentContext context);
 	/// <summary>
+	/// Enter a parse tree produced by the <c>incompleteUserVariableAssignment</c>
+	/// labeled alternative in <see cref="SinumerikNCParser.variableAssignment"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterIncompleteUserVariableAssignment([NotNull] SinumerikNCParser.IncompleteUserVariableAssignmentContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>incompleteUserVariableAssignment</c>
+	/// labeled alternative in <see cref="SinumerikNCParser.variableAssignment"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitIncompleteUserVariableAssignment([NotNull] SinumerikNCParser.IncompleteUserVariableAssignmentContext context);
+	/// <summary>
 	/// Enter a parse tree produced by the <c>RParamAssignment</c>
 	/// labeled alternative in <see cref="SinumerikNCParser.variableAssignment"/>.
 	/// </summary>

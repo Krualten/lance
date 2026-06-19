@@ -63,7 +63,13 @@ public class ParserManager : IParserManager
     
     private CommonTokenStream Tokenize(PreprocessedDocument document, ErrorListener errorListener)
     {
-        ICharStream stream = CharStreams.fromString(document.Code);
+        var code = document.Code;
+        if (code.Length > 0 && code[^1] is not '\r' and not '\n')
+        {
+            code += Environment.NewLine;
+        }
+
+        ICharStream stream = CharStreams.fromString(code);
         SinumerikNCLexer lexer = new SinumerikNCLexer(stream);
         lexer.RemoveErrorListeners();
         lexer.AddErrorListener(errorListener);

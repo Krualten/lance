@@ -763,6 +763,56 @@ M17
     }
 
     [TestMethod]
+    public void EmptyManufacturerSettingIsReportedAsWarningAndKeepsItsSymbolUse()
+    {
+        var code = @"GD_Nc4_Cal_L_Tc1 = ; configured during commissioning" + Environment.NewLine;
+        var symbolUses = GetSymbolUses(code, out var parserDiagnostics);
+
+        Assert.AreEqual(1, parserDiagnostics.Count);
+        Assert.AreEqual(LspTypes.DiagnosticSeverity.Warning, parserDiagnostics.Single().Severity);
+        Assert.IsTrue(parserDiagnostics.Single().Message.Contains(
+            "Assignment has no value",
+            StringComparison.Ordinal));
+        CollectionAssert.AreEqual(
+            new[] { "GD_Nc4_Cal_L_Tc1" },
+            symbolUses.OfType<SymbolUse>().Select(use => use.Identifier).ToArray());
+    }
+
+    [TestMethod]
+    public void FinalLabelDoesNotRequirePhysicalNewlineAtEndOfFile()
+    {
+        var code =
+            @"START_SECTION:
+M17
+END_SECTION:";
+        var preprocessedDocument = new PreprocessedDocument(
+            new DocumentInformationMock(new Uri("file:///SETTINGS.SPF"), ".spf", DocumentType.SubProcedure),
+            code,
+            code,
+            new PlaceholderTable(new Dictionary<string, string>()),
+            "");
+        var parserManager = new ParserManager();
+        var parserResult = parserManager.Parse(preprocessedDocument);
+        var parsedDocument = new ParsedDocument(
+            preprocessedDocument,
+            parserResult.ParseTree,
+            parserResult.Diagnostics);
+
+        var labels = parserManager.GetSymbolTableForDocument(parsedDocument)
+            .OfType<LabelSymbol>()
+            .Select(symbol => symbol.Identifier)
+            .ToArray();
+
+        Assert.AreEqual(
+            0,
+            parserResult.Diagnostics.Count,
+            string.Join(Environment.NewLine, parserResult.Diagnostics.Select(diagnostic => diagnostic.Message)));
+        CollectionAssert.AreEquivalent(
+            new[] { "START_SECTION", "END_SECTION" },
+            labels);
+    }
+
+    [TestMethod]
     public void OperateGroupMetadataDoesNotInterruptNcParsingOrCreateSymbolUses()
     {
         var code =

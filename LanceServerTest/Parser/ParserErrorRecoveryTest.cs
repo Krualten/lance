@@ -43,7 +43,10 @@ public class ParserErrorRecoveryTest
 
         // Assert
         Assert.IsTrue(parserResult.Diagnostics.Any());
-        Assert.AreEqual(0, actualSymbolUses.Count);
+        Assert.AreEqual(
+            0,
+            actualSymbolUses.Count,
+            string.Join(", ", actualSymbolUses.Select(symbolUse => symbolUse.Identifier)));
     }
 
     private static PreprocessedDocument CreateDocument(string code)

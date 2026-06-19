@@ -968,6 +968,7 @@ variableRedecleration: REDEFINE (NAME | rParam | SYS_VAR) globalVariableModifier
 // assignment
 variableAssignment
     : userVariableIdentifier variableAssignmentExpression   #userVariableAssignment
+    | userVariableIdentifier ASSIGNMENT                      #incompleteUserVariableAssignment
     | rParam variableAssignmentExpression                   #RParamAssignment
     | SYS_VAR variableAssignmentExpression                  #SysVarAssignment
     | userVariableIdentifier arrayDefinition? arrayAssignmentExpression #arrayVariableAssignment

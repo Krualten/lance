@@ -45,6 +45,17 @@ public class SymbolUseListener : SinumerikNCBaseListener
     }
 
     /// <summary>
+    /// Keeps symbol resolution active for manufacturer setting templates whose value is
+    /// intentionally left for machine commissioning.
+    /// </summary>
+    public override void ExitIncompleteUserVariableAssignment(
+        SinumerikNCParser.IncompleteUserVariableAssignmentContext context)
+    {
+        if (IsOperateGroupMetadata || context.ASSIGNMENT()?.Symbol.TokenIndex < 0) return;
+        AddIdentifierIfNotPlaceholder(context.userVariableIdentifier(), canBeMachineAxis: true);
+    }
+
+    /// <summary>
     /// Is called at the end of a array variable assignment.
     /// Creates a new <see cref="SymbolUse"/> and adds it to the symbol use table, if it isn't a placeholder.
     /// </summary>
@@ -99,7 +110,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
         if (name == null) return;
 
         var token = name.Symbol;
-        if (_document.PlaceholderTable.ContainedPlaceholder(token.Text))
+        if (IsSyntheticToken(token) || _document.PlaceholderTable.ContainedPlaceholder(token.Text))
         {
             return;
         }
@@ -146,7 +157,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
         }
 
         var token = name.Symbol;
-        if (_document.PlaceholderTable.ContainedPlaceholder(token.Text))
+        if (IsSyntheticToken(token) || _document.PlaceholderTable.ContainedPlaceholder(token.Text))
         {
             return;
         }
@@ -356,7 +367,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
         if (name == null) return;
 
         var token = name.Symbol;
-        if (_document.PlaceholderTable.ContainedPlaceholder(token.Text))
+        if (IsSyntheticToken(token) || _document.PlaceholderTable.ContainedPlaceholder(token.Text))
         {
             return;
         }
@@ -606,7 +617,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
 
     private void AddTokenIfNotPlaceholder(IToken token, bool canBeMachineAxis = false)
     {
-        if (_document.PlaceholderTable.ContainedPlaceholder(token.Text))
+        if (IsSyntheticToken(token) || _document.PlaceholderTable.ContainedPlaceholder(token.Text))
         {
             return;
         }
@@ -616,6 +627,12 @@ public class SymbolUseListener : SinumerikNCBaseListener
             ParserHelper.GetRangeForToken(token),
             _document.Information.Uri,
             canBeMachineAxis));
+    }
+
+    private static bool IsSyntheticToken(IToken token)
+    {
+        return token.TokenIndex < 0
+            || token.Text.StartsWith("<missing ", StringComparison.Ordinal);
     }
 
     private void AddNameIfNotPlaceholder(ITerminalNode? name)

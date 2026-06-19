@@ -54,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - resolved direct `CALL ... BLOCK ... TO ...` boundaries against labels in the called program while preserving caller-side string variables.
 - accepted the documented trailing `<<` operator and optional execution parameter in `MSG(...)` without allowing truncated concatenations in other expressions.
 - recognized VCS volumetric-compensation data stored in `.SPF` files without parsing it as executable NC code or publishing false procedure symbols.
+- treated empty manufacturer-setting assignments as commissioning warnings and accepted valid final statements or labels without a physical trailing newline.
 
 ## [1.0.1] - 2023-06-03
 

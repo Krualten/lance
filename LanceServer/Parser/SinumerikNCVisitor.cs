@@ -281,6 +281,13 @@ public interface ISinumerikNCVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitUserVariableAssignment([NotNull] SinumerikNCParser.UserVariableAssignmentContext context);
 	/// <summary>
+	/// Visit a parse tree produced by the <c>incompleteUserVariableAssignment</c>
+	/// labeled alternative in <see cref="SinumerikNCParser.variableAssignment"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitIncompleteUserVariableAssignment([NotNull] SinumerikNCParser.IncompleteUserVariableAssignmentContext context);
+	/// <summary>
 	/// Visit a parse tree produced by the <c>RParamAssignment</c>
 	/// labeled alternative in <see cref="SinumerikNCParser.variableAssignment"/>.
 	/// </summary>

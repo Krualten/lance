@@ -145,6 +145,17 @@ public static class DiagnosticMessage
         };
     }
 
+    public static LspTypes.Diagnostic IncompleteAssignment(Range range)
+    {
+        return new LspTypes.Diagnostic
+        {
+            Range = range,
+            Severity = DiagnosticSeverity.Warning,
+            Source = DiagnosticSource,
+            Message = "Assignment has no value. Configure it before loading this program into the CNC."
+        };
+    }
+
     public static LspTypes.Diagnostic ParameterTypeMismatch(
         ProcedureUse procedureUse,
         ProcedureSymbol procedureSymbol,

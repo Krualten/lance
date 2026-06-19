@@ -30,6 +30,18 @@ public class SyntaxValidationListener : SinumerikNCBaseListener
             "A trailing '<<' operator is only valid in an MSG message text."));
     }
 
+    public override void ExitIncompleteUserVariableAssignment(
+        SinumerikNCParser.IncompleteUserVariableAssignmentContext context)
+    {
+        if (context.ASSIGNMENT()?.Symbol.TokenIndex < 0)
+        {
+            return;
+        }
+
+        _diagnostics.Add(DiagnosticMessage.IncompleteAssignment(
+            ParserHelper.GetRangeFromStartToEndToken(context.Start, context.Stop)));
+    }
+
     private static bool IsMessageText(ParserRuleContext context)
     {
         for (var parent = context.Parent; parent != null; parent = parent.Parent)

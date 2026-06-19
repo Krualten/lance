@@ -534,6 +534,20 @@ public partial class SinumerikNCBaseListener : ISinumerikNCListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitUserVariableAssignment([NotNull] SinumerikNCParser.UserVariableAssignmentContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by the <c>incompleteUserVariableAssignment</c>
+	/// labeled alternative in <see cref="SinumerikNCParser.variableAssignment"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterIncompleteUserVariableAssignment([NotNull] SinumerikNCParser.IncompleteUserVariableAssignmentContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>incompleteUserVariableAssignment</c>
+	/// labeled alternative in <see cref="SinumerikNCParser.variableAssignment"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitIncompleteUserVariableAssignment([NotNull] SinumerikNCParser.IncompleteUserVariableAssignmentContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by the <c>RParamAssignment</c>
 	/// labeled alternative in <see cref="SinumerikNCParser.variableAssignment"/>.
 	/// <para>The default implementation does nothing.</para>
