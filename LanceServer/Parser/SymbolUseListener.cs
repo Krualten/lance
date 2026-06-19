@@ -61,6 +61,12 @@ public class SymbolUseListener : SinumerikNCBaseListener
     public override void ExitVariableUse(SinumerikNCParser.VariableUseContext context)
     {
         if (IsOperateGroupMetadata) return;
+
+        if (TryAddBlockLabelUse(context))
+        {
+            return;
+        }
+
         AddIdentifierIfNotPlaceholder(
             context.userVariableIdentifier(),
             canBeMachineAxis: IsSystemVariableIndex(context));
@@ -184,7 +190,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
             return;
         }
 
-        if (TryGetStringLiteral(expression.GetText(), out var literalPath))
+        if (TryGetStringLiteral(expression, out var literalPath))
         {
             literalPath = literalPath.Trim();
             _activeCallPath = string.IsNullOrEmpty(literalPath) ? null : literalPath;
@@ -242,7 +248,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
 
     private void AddLiteralProgramUse(ParserRuleContext expression)
     {
-        if (!TryGetStringLiteral(expression.GetText(), out var programReference)
+        if (!TryGetStringLiteral(expression, out var programReference)
             || !SinumerikProgramReference.TryParse(
                 programReference,
                 out var identifier,
@@ -260,6 +266,52 @@ public class SymbolUseListener : SinumerikNCBaseListener
             _activeCallPath,
             explicitDirectoryPath,
             explicitFileExtension));
+    }
+
+    private bool TryAddBlockLabelUse(SinumerikNCParser.VariableUseContext context)
+    {
+        var call = FindAncestor<SinumerikNCParser.CallContext>(context);
+        if (call?.CALL_BLOCK() == null
+            || (!IsWithin(context, call.startLabel) && !IsWithin(context, call.endLabel)))
+        {
+            return false;
+        }
+
+        string? targetProgramIdentifier = null;
+        string? explicitDirectoryPath = null;
+        string? explicitFileExtension = null;
+
+        if (call.program != null)
+        {
+            if (!TryGetStringLiteral(call.program, out var programReference)
+                || !SinumerikProgramReference.TryParse(
+                    programReference,
+                    out targetProgramIdentifier,
+                    out explicitDirectoryPath,
+                    out explicitFileExtension))
+            {
+                // A dynamic target also makes the interpretation of its block boundaries
+                // dynamic, so keep them as ordinary caller-side variable uses.
+                return false;
+            }
+        }
+
+        var identifier = context.userVariableIdentifier();
+        if (identifier == null
+            || _document.PlaceholderTable.ContainedPlaceholder(identifier.Start.Text))
+        {
+            return true;
+        }
+
+        SymbolUseTable.Add(new BlockLabelUse(
+            identifier.Start.Text,
+            ParserHelper.GetRangeForToken(identifier.Start),
+            _document.Information.Uri,
+            targetProgramIdentifier,
+            _activeCallPath,
+            explicitDirectoryPath,
+            explicitFileExtension));
+        return true;
     }
 
     /// <summary>
@@ -530,6 +582,28 @@ public class SymbolUseListener : SinumerikNCBaseListener
         return false;
     }
 
+    private static TContext? FindAncestor<TContext>(ParserRuleContext context)
+        where TContext : ParserRuleContext
+    {
+        for (var parent = context.Parent; parent != null; parent = parent.Parent)
+        {
+            if (parent is TContext typedParent)
+            {
+                return typedParent;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool IsWithin(ParserRuleContext context, ParserRuleContext? possibleAncestor)
+    {
+        return possibleAncestor?.Start != null
+            && possibleAncestor.Stop != null
+            && context.Start.TokenIndex >= possibleAncestor.Start.TokenIndex
+            && context.Stop.TokenIndex <= possibleAncestor.Stop.TokenIndex;
+    }
+
     private void AddTokenIfNotPlaceholder(IToken token, bool canBeMachineAxis = false)
     {
         if (_document.PlaceholderTable.ContainedPlaceholder(token.Text))
@@ -566,9 +640,18 @@ public class SymbolUseListener : SinumerikNCBaseListener
         AddTokenIfNotPlaceholder(identifier.Start, canBeMachineAxis);
     }
 
-    private static bool TryGetStringLiteral(string text, out string value)
+    private static bool TryGetStringLiteral(ParserRuleContext context, out string value)
     {
         value = string.Empty;
+        if (context.Start == null
+            || context.Stop == null
+            || context.Start.TokenIndex != context.Stop.TokenIndex
+            || context.Start.Type != SinumerikNCLexer.STRING)
+        {
+            return false;
+        }
+
+        var text = context.Start.Text;
         if (text.Length < 2 || !text.StartsWith('"') || !text.EndsWith('"'))
         {
             return false;

@@ -292,6 +292,11 @@ public class Workspace : IWorkspace
     /// <inheritdoc />
     public IEnumerable<AbstractSymbol> GetSymbols(AbstractSymbolUse symbolUse)
     {
+        if (symbolUse is BlockLabelUse blockLabelUse)
+        {
+            return GetBlockLabelSymbols(blockLabelUse);
+        }
+
         var candidates = SymbolReferenceResolver.FilterCandidates(
             symbolUse,
             GetSymbols(symbolUse.Identifier, symbolUse.SourceDocument));
@@ -308,6 +313,41 @@ public class Workspace : IWorkspace
         }
 
         return candidates;
+    }
+
+    private IEnumerable<AbstractSymbol> GetBlockLabelSymbols(BlockLabelUse blockLabelUse)
+    {
+        var callerVariables = GetSymbols(blockLabelUse.Identifier, blockLabelUse.SourceDocument)
+            .Where(candidate => candidate is not ProcedureSymbol && candidate is not LabelSymbol)
+            .ToList();
+        if (callerVariables.Count > 0)
+        {
+            return callerVariables;
+        }
+
+        if (blockLabelUse.TargetProgramIdentifier == null)
+        {
+            return GetSymbols(blockLabelUse.Identifier, blockLabelUse.SourceDocument)
+                .Where(candidate =>
+                    candidate is LabelSymbol
+                    && candidate.SourceDocument == blockLabelUse.SourceDocument);
+        }
+
+        var targetProgramUse = new ProcedureUse(
+            blockLabelUse.TargetProgramIdentifier,
+            blockLabelUse.Range,
+            blockLabelUse.SourceDocument,
+            Array.Empty<ProcedureUseArgument>(),
+            blockLabelUse.CallPath,
+            blockLabelUse.ExplicitDirectoryPath,
+            blockLabelUse.ExplicitFileExtension);
+
+        return GetSymbols(targetProgramUse)
+            .OfType<ProcedureSymbol>()
+            .SelectMany(procedure => GetSymbols(blockLabelUse.Identifier, procedure.SourceDocument)
+                .Where(candidate =>
+                    candidate is LabelSymbol
+                    && candidate.SourceDocument == procedure.SourceDocument));
     }
 
     /// <inheritdoc />

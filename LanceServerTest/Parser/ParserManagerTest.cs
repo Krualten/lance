@@ -578,7 +578,7 @@ PCALL/_N_WKS_DIR/_N_LIBRARY_WPD/_N_TEST_HELPER_SPF(mainAxis)
     }
 
     [TestMethod]
-    public void CallBlockWithLiteralProgramCreatesProcedureAndLabelVariableUses()
+    public void CallBlockWithLiteralProgramCreatesProcedureAndTargetLabelUses()
     {
         var code = @"CALL ""CONTOUR"" BLOCK startLabel TO endLabel" + Environment.NewLine;
         var symbolUses = GetSymbolUses(code, out var parserDiagnostics);
@@ -591,11 +591,13 @@ PCALL/_N_WKS_DIR/_N_LIBRARY_WPD/_N_TEST_HELPER_SPF(mainAxis)
         Assert.AreEqual("CONTOUR", symbolUses.OfType<ProcedureUse>().Single().Identifier);
         CollectionAssert.AreEquivalent(
             new[] { "startLabel", "endLabel" },
-            symbolUses.OfType<SymbolUse>().Select(use => use.Identifier).ToArray());
+            symbolUses.OfType<BlockLabelUse>().Select(use => use.Identifier).ToArray());
+        Assert.IsTrue(symbolUses.OfType<BlockLabelUse>()
+            .All(use => use.TargetProgramIdentifier == "CONTOUR"));
     }
 
     [TestMethod]
-    public void LocalCallBlockOnlyCreatesLabelVariableUses()
+    public void LocalCallBlockCreatesCurrentProgramLabelUses()
     {
         var code = @"CALL BLOCK startLabel TO endLabel" + Environment.NewLine;
         var symbolUses = GetSymbolUses(code, out var parserDiagnostics);
@@ -604,7 +606,9 @@ PCALL/_N_WKS_DIR/_N_LIBRARY_WPD/_N_TEST_HELPER_SPF(mainAxis)
         Assert.AreEqual(0, symbolUses.OfType<ProcedureUse>().Count());
         CollectionAssert.AreEquivalent(
             new[] { "startLabel", "endLabel" },
-            symbolUses.OfType<SymbolUse>().Select(use => use.Identifier).ToArray());
+            symbolUses.OfType<BlockLabelUse>().Select(use => use.Identifier).ToArray());
+        Assert.IsTrue(symbolUses.OfType<BlockLabelUse>()
+            .All(use => use.TargetProgramIdentifier == null));
     }
 
     [TestMethod]
@@ -617,6 +621,22 @@ PCALL/_N_WKS_DIR/_N_LIBRARY_WPD/_N_TEST_HELPER_SPF(mainAxis)
         Assert.AreEqual(0, symbolUses.OfType<ProcedureUse>().Count());
         CollectionAssert.AreEquivalent(
             new[] { "programName", "startLabel", "endLabel" },
+            symbolUses.OfType<SymbolUse>().Select(use => use.Identifier).ToArray());
+    }
+
+    [TestMethod]
+    public void ConcatenatedIndirectCallRemainsDynamic()
+    {
+        var code = @"CALL ""ATC"" << sourceMag << ""_CHANGE""" + Environment.NewLine;
+        var symbolUses = GetSymbolUses(code, out var parserDiagnostics);
+
+        Assert.AreEqual(
+            0,
+            parserDiagnostics.Count,
+            string.Join(Environment.NewLine, parserDiagnostics.Select(diagnostic => diagnostic.Message)));
+        Assert.AreEqual(0, symbolUses.OfType<ProcedureUse>().Count());
+        CollectionAssert.AreEqual(
+            new[] { "sourceMag" },
             symbolUses.OfType<SymbolUse>().Select(use => use.Identifier).ToArray());
     }
 
