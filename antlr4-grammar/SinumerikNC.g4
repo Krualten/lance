@@ -918,8 +918,9 @@ blockNumberDefinition: blockNumber;
 blockNumber: BLOCK_NUMBER intUnsigned;
 labelDefinition: (NAME | LABEL_END) DOUBLE_COLON;
 
-// procedure
-procedureDefinition: procedureDefinitionHeader NEWLINE+ content PROC_END NEWLINE+?;
+// A PROC header declares the program interface. ENDPROC may be present, but
+// manufacturer cycles are also valid when the program body simply reaches EOF.
+procedureDefinition: procedureDefinitionHeader NEWLINE+ content PROC_END? NEWLINE*;
 procedureDefinitionHeader: PROC NAME parameterDefinitions? procedureModifier*;
 procedureModifier: SBLOF | DISPLON | DISPLOF | ACTBLOCNO | SAVE;
 
