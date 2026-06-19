@@ -366,6 +366,111 @@ ENDPROC
     }
 
     [TestMethod]
+    public void ManufacturerCycleReportsKnownArgumentTypeMismatch()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "lance-cycle-type-mismatch-" + Guid.NewGuid());
+        var cyclesDirectory = Path.Combine(directory, "CMA.DIR");
+        Directory.CreateDirectory(cyclesDirectory);
+        var helperPath = Path.Combine(cyclesDirectory, "OEM_CYCLE.SPF");
+        var mainPath = Path.Combine(directory, "TEST_MAIN.MPF");
+        File.WriteAllText(
+            helperPath,
+            @"PROC OEM_CYCLE(REAL depth, VAR INT result, STRING[20] label, AXIS machiningAxis)
+RET
+ENDPROC
+");
+        File.WriteAllText(
+            mainPath,
+            @"PROC TEST_MAIN()
+DEF REAL wrongResult
+OEM_CYCLE(10, wrongResult, 5, X)
+RET
+ENDPROC
+");
+
+        try
+        {
+            var configurationManager = CreateConfigurationManager();
+            var workspace = new Workspace(
+                new ParserManager(),
+                new PlaceholderPreprocessor(configurationManager),
+                configurationManager);
+            workspace.GetSymbolisedDocument(new Uri(helperPath));
+            var mainDocument = workspace.GetSymbolUseExtractedDocument(new Uri(mainPath));
+
+            var diagnostics = new DiagnosticHandler().HandleRequest(mainDocument, workspace).Items;
+
+            Assert.AreEqual(0, mainDocument.ParserDiagnostics.Count);
+            Assert.IsTrue(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.StartsWith(
+                        "Argument 2 does not match parameter result",
+                        StringComparison.Ordinal)));
+            Assert.IsTrue(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.StartsWith(
+                        "Argument 3 does not match parameter label",
+                        StringComparison.Ordinal)));
+            Assert.IsFalse(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.StartsWith(
+                        "Argument 1 does not match",
+                        StringComparison.Ordinal)));
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [TestMethod]
+    public void ManufacturerCycleAcceptsExactReferenceAndNumericValueConversion()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "lance-cycle-type-match-" + Guid.NewGuid());
+        var cyclesDirectory = Path.Combine(directory, "CMA.DIR");
+        Directory.CreateDirectory(cyclesDirectory);
+        var helperPath = Path.Combine(cyclesDirectory, "OEM_CYCLE.SPF");
+        var mainPath = Path.Combine(directory, "TEST_MAIN.MPF");
+        File.WriteAllText(
+            helperPath,
+            @"PROC OEM_CYCLE(REAL depth, VAR INT result, STRING[20] label, AXIS machiningAxis)
+RET
+ENDPROC
+");
+        File.WriteAllText(
+            mainPath,
+            @"PROC TEST_MAIN()
+DEF INT result
+DEF STRING[20] label
+OEM_CYCLE(10, result, label, X)
+RET
+ENDPROC
+");
+
+        try
+        {
+            var configurationManager = CreateConfigurationManager();
+            var workspace = new Workspace(
+                new ParserManager(),
+                new PlaceholderPreprocessor(configurationManager),
+                configurationManager);
+            workspace.GetSymbolisedDocument(new Uri(helperPath));
+            var mainDocument = workspace.GetSymbolUseExtractedDocument(new Uri(mainPath));
+
+            var diagnostics = new DiagnosticHandler().HandleRequest(mainDocument, workspace).Items;
+
+            Assert.AreEqual(0, mainDocument.ParserDiagnostics.Count);
+            Assert.IsFalse(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.StartsWith("Argument ", StringComparison.Ordinal)));
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [TestMethod]
     public void MissingExplicitIsoCallPathDoesNotResolveLocalHomonym()
     {
         var directory = Path.Combine(Path.GetTempPath(), "lance-isocall-" + Guid.NewGuid());

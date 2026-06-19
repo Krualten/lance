@@ -39,6 +39,40 @@ public class ParameterSymbol : AbstractSymbol
     /// </summary>
     public bool CanBeOmitted => !_isReferenceValue && _compositeDataType.DataType != DataType.Axis;
 
+    public DataType DataType => _compositeDataType.DataType;
+
+    public bool IsReferenceValue => _isReferenceValue;
+
+    public bool AcceptsArgument(DataType? argumentType, bool isWritableReference)
+    {
+        if (_isReferenceValue && !isWritableReference)
+        {
+            return false;
+        }
+
+        if (argumentType == null)
+        {
+            return true;
+        }
+
+        if (_isReferenceValue)
+        {
+            return argumentType == DataType;
+        }
+
+        if (argumentType == DataType)
+        {
+            return true;
+        }
+
+        return IsScalarNumeric(argumentType.Value) && IsScalarNumeric(DataType);
+    }
+
+    private static bool IsScalarNumeric(DataType dataType)
+    {
+        return dataType is DataType.Bool or DataType.Char or DataType.Int or DataType.Real;
+    }
+
     private const string ArraySizeDelimiter = ", ";
     private readonly CompositeDataType _compositeDataType;
     private readonly string[] _arraySize;

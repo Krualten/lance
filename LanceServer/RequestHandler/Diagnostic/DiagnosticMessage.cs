@@ -169,6 +169,24 @@ public static class DiagnosticMessage
         };
     }
 
+    public static LspTypes.Diagnostic ParameterTypeMismatch(
+        ProcedureUse procedureUse,
+        ProcedureSymbol procedureSymbol,
+        int position)
+    {
+        var parameter = procedureSymbol.Parameters[position];
+        var referenceRequirement = parameter.IsReferenceValue ? " writable reference" : string.Empty;
+        return new LspTypes.Diagnostic
+        {
+            Range = procedureUse.Arguments[position].Range ?? procedureUse.Range,
+            Severity = DiagnosticSeverity.Warning,
+            Source = DiagnosticSource,
+            Message =
+                $"Argument {position + 1} does not match parameter {parameter.Identifier} " +
+                $"({parameter.DataType.ToString().ToUpperInvariant()}{referenceRequirement})."
+        };
+    }
+
     public static LspTypes.Diagnostic LocalSymbolAlreadyExists(AbstractSymbol symbol, AbstractSymbol existingSymbol)
     {
         return new LspTypes.Diagnostic

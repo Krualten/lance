@@ -64,12 +64,66 @@ public class ProcedureSymbolTest
             CreateParameter("depth", DataType.Real),
             CreateParameter("mode", DataType.Int));
 
-        Assert.IsFalse(procedure.DeclarationMatchesParameters(new[] { new ProcedureUseArgument(0) }));
+        Assert.IsFalse(procedure.DeclarationMatchesParameters(new[]
+        {
+            new ProcedureUseArgument(0, inferredDataType: DataType.Real)
+        }));
         Assert.IsTrue(procedure.DeclarationMatchesParameters(new[]
         {
-            new ProcedureUseArgument(0),
-            new ProcedureUseArgument(1)
+            new ProcedureUseArgument(0, inferredDataType: DataType.Real),
+            new ProcedureUseArgument(1, inferredDataType: DataType.Int)
         }));
+    }
+
+    [TestMethod]
+    public void ReferenceParameterRequiresWritableArgumentWithExactType()
+    {
+        var procedure = CreateProcedure(CreateParameter("result", DataType.Int, isReferenceValue: true));
+
+        CollectionAssert.AreEqual(
+            new[] { 0 },
+            procedure.GetIncompatibleArgumentPositions(
+                new[] { new ProcedureUseArgument(0, inferredDataType: DataType.Int) },
+                argument => argument.InferredDataType).ToArray());
+        CollectionAssert.AreEqual(
+            new[] { 0 },
+            procedure.GetIncompatibleArgumentPositions(
+                new[]
+                {
+                    new ProcedureUseArgument(
+                        0,
+                        inferredDataType: DataType.Real,
+                        isWritableReference: true)
+                },
+                argument => argument.InferredDataType).ToArray());
+        Assert.AreEqual(
+            0,
+            procedure.GetIncompatibleArgumentPositions(
+                new[]
+                {
+                    new ProcedureUseArgument(
+                        0,
+                        inferredDataType: DataType.Int,
+                        isWritableReference: true)
+                },
+                argument => argument.InferredDataType).Count());
+    }
+
+    [TestMethod]
+    public void ValueParametersAllowScalarNumericConversionButNotStringConversion()
+    {
+        var procedure = CreateProcedure(CreateParameter("depth", DataType.Real));
+
+        Assert.AreEqual(
+            0,
+            procedure.GetIncompatibleArgumentPositions(
+                new[] { new ProcedureUseArgument(0, inferredDataType: DataType.Int) },
+                argument => argument.InferredDataType).Count());
+        CollectionAssert.AreEqual(
+            new[] { 0 },
+            procedure.GetIncompatibleArgumentPositions(
+                new[] { new ProcedureUseArgument(0, inferredDataType: DataType.String) },
+                argument => argument.InferredDataType).ToArray());
     }
 
     private static ProcedureSymbol CreateProcedure(params ParameterSymbol[] parameters)

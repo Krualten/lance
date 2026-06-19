@@ -28,6 +28,8 @@ public class VariableSymbol : AbstractSymbol
     /// <inheritdoc/>
     public override string Documentation { get; }
 
+    public DataType DataType => _compositeDataType.DataType;
+
     private readonly CompositeDataType _compositeDataType;
     private readonly string[] _arraySize;
     private readonly bool _isGlobal;

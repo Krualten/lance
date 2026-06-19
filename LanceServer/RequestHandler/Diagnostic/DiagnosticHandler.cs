@@ -42,6 +42,18 @@ public class DiagnosticHandler : IDiagnosticHandler
                         {
                             diagnostics.Add(DiagnosticMessage.ParameterMismatch(procedureUse, procedureSymbol));
                         }
+                        else
+                        {
+                            diagnostics.AddRange(procedureSymbol
+                                .GetIncompatibleArgumentPositions(
+                                    procedureUse.Arguments,
+                                    argument => ResolveArgumentType(argument, procedureUse.SourceDocument, workspace))
+                                .Select(position =>
+                                    DiagnosticMessage.ParameterTypeMismatch(
+                                        procedureUse,
+                                        procedureSymbol,
+                                        position)));
+                        }
                     }
                     else if (symbolUse is DeclarationProcedureUse declarationUse)
                     {
@@ -110,5 +122,30 @@ public class DiagnosticHandler : IDiagnosticHandler
         }
         
         return new DocumentDiagnosticReport { Items = diagnostics.ToArray() };
+    }
+
+    private static DataType? ResolveArgumentType(
+        ProcedureUseArgument argument,
+        Uri sourceDocument,
+        IWorkspace workspace)
+    {
+        if (argument.InferredDataType != null)
+        {
+            return argument.InferredDataType;
+        }
+
+        if (argument.ReferencedIdentifier == null)
+        {
+            return null;
+        }
+
+        return workspace.GetSymbols(argument.ReferencedIdentifier, sourceDocument)
+            .Select(symbol => symbol switch
+            {
+                VariableSymbol variable => (DataType?)variable.DataType,
+                ParameterSymbol parameter => parameter.DataType,
+                _ => null
+            })
+            .FirstOrDefault(dataType => dataType != null);
     }
 }

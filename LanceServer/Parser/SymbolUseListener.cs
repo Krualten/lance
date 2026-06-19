@@ -292,7 +292,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
         }
 
         var arguments = context.parameterDeclarations()?.parameterDeclaration()
-            .Select((_, position) => new ProcedureUseArgument(position))
+            .Select((declaration, position) => CreateDeclarationArgument(declaration, position))
             .ToArray() ?? Array.Empty<ProcedureUseArgument>();
         var identifier = SinumerikProgramReference.TryParse(token.Text, out var normalizedIdentifier, out _)
             ? normalizedIdentifier
@@ -343,14 +343,151 @@ public class SymbolUseListener : SinumerikNCBaseListener
         for (var position = 0; position < separators.Count; position++)
         {
             var separator = separators[position];
-            var hasExpression = expressions.Any(expression =>
+            var expression = expressions.FirstOrDefault(expression =>
                 expression.Start.TokenIndex > previousSeparator
                 && expression.Stop.TokenIndex < separator);
-            arguments[position] = new ProcedureUseArgument(position, !hasExpression);
+            arguments[position] = CreateProcedureArgument(position, expression);
             previousSeparator = separator;
         }
 
         return arguments;
+    }
+
+    private static ProcedureUseArgument CreateProcedureArgument(
+        int position,
+        SinumerikNCParser.ExpressionContext? expression)
+    {
+        if (expression == null)
+        {
+            return new ProcedureUseArgument(position, isOmitted: true);
+        }
+
+        var primaryExpression = expression is SinumerikNCParser.PrimaryExpressionLabelContext primaryLabel
+            ? primaryLabel.primaryExpression()
+            : null;
+
+        if (primaryExpression is SinumerikNCParser.VariableUseContext variableUse)
+        {
+            return new ProcedureUseArgument(
+                position,
+                referencedIdentifier: variableUse.userVariableIdentifier()?.GetText(),
+                isWritableReference: true,
+                range: ParserHelper.GetRangeFromStartToEndToken(expression.Start, expression.Stop));
+        }
+
+        if (primaryExpression is SinumerikNCParser.RParamUseContext)
+        {
+            return new ProcedureUseArgument(
+                position,
+                inferredDataType: DataType.Real,
+                isWritableReference: true,
+                range: ParserHelper.GetRangeFromStartToEndToken(expression.Start, expression.Stop));
+        }
+
+        return new ProcedureUseArgument(
+            position,
+            inferredDataType: InferExpressionType(expression),
+            range: ParserHelper.GetRangeFromStartToEndToken(expression.Start, expression.Stop));
+    }
+
+    private static ProcedureUseArgument CreateDeclarationArgument(
+        SinumerikNCParser.ParameterDeclarationContext declaration,
+        int position)
+    {
+        var typeContext = declaration switch
+        {
+            SinumerikNCParser.ParameterDeclarationByValueContext value => value.type(),
+            SinumerikNCParser.ParameterDeclarationByReferenceContext reference => reference.type(),
+            _ => null
+        };
+
+        return new ProcedureUseArgument(
+            position,
+            inferredDataType: ParseDataType(typeContext?.GetText()),
+            isWritableReference: declaration is SinumerikNCParser.ParameterDeclarationByReferenceContext,
+            range: ParserHelper.GetRangeFromStartToEndToken(declaration.Start, declaration.Stop));
+    }
+
+    private static DataType? InferExpressionType(SinumerikNCParser.ExpressionContext expression)
+    {
+        switch (expression)
+        {
+            case SinumerikNCParser.RelationalExpressionContext:
+            case SinumerikNCParser.AndExpressionContext:
+            case SinumerikNCParser.ExclusiveOrExpressionContext:
+            case SinumerikNCParser.InclusiveOrExpressionContext:
+                return DataType.Bool;
+            case SinumerikNCParser.ToStringExpressionContext:
+            case SinumerikNCParser.ConcatExpressionContext:
+                return DataType.String;
+            case SinumerikNCParser.SignExpressionContext sign:
+                return InferPrimaryExpressionType(sign.primaryExpression());
+            case SinumerikNCParser.PrimaryExpressionLabelContext primary:
+                return InferPrimaryExpressionType(primary.primaryExpression());
+            case SinumerikNCParser.AdditiveExpressionContext additive:
+                return InferNumericResult(additive.expression());
+            case SinumerikNCParser.MultiplicativeExpressionContext multiplicative:
+                return InferNumericResult(multiplicative.expression());
+            default:
+                return null;
+        }
+    }
+
+    private static DataType? InferPrimaryExpressionType(
+        SinumerikNCParser.PrimaryExpressionContext? expression)
+    {
+        return expression switch
+        {
+            SinumerikNCParser.ConstantUseContext constant => InferConstantType(constant.constant()),
+            SinumerikNCParser.RParamUseContext => DataType.Real,
+            SinumerikNCParser.AxisUseContext => DataType.Axis,
+            SinumerikNCParser.NestedExpressionContext nested => InferExpressionType(nested.expression()),
+            _ => null
+        };
+    }
+
+    private static DataType? InferConstantType(SinumerikNCParser.ConstantContext? constant)
+    {
+        if (constant == null)
+        {
+            return null;
+        }
+
+        return constant.Start.Type switch
+        {
+            SinumerikNCLexer.STRING => DataType.String,
+            SinumerikNCLexer.BOOL => DataType.Bool,
+            SinumerikNCLexer.REAL_UNSIGNED => DataType.Real,
+            SinumerikNCLexer.INT_UNSIGNED or SinumerikNCLexer.HEX or SinumerikNCLexer.BIN => DataType.Int,
+            _ => null
+        };
+    }
+
+    private static DataType? InferNumericResult(
+        IEnumerable<SinumerikNCParser.ExpressionContext> expressions)
+    {
+        var types = expressions.Select(InferExpressionType).ToArray();
+        if (types.Any(type => type == null || type is DataType.String or DataType.Axis or DataType.Frame))
+        {
+            return null;
+        }
+
+        return types.Any(type => type == DataType.Real) ? DataType.Real : DataType.Int;
+    }
+
+    private static DataType? ParseDataType(string? text)
+    {
+        if (string.IsNullOrEmpty(text))
+        {
+            return null;
+        }
+
+        if (text.StartsWith("string", StringComparison.OrdinalIgnoreCase))
+        {
+            return DataType.String;
+        }
+
+        return Enum.TryParse<DataType>(text, true, out var dataType) ? dataType : null;
     }
 
     private void AddTokenIfNotPlaceholder(IToken token)

@@ -70,7 +70,35 @@ public class ProcedureSymbol : AbstractSymbol
     /// </summary>
     public bool DeclarationMatchesParameters(ProcedureUseArgument[] arguments)
     {
-        return arguments.Length == Parameters.Length && arguments.All(argument => !argument.IsOmitted);
+        if (arguments.Length != Parameters.Length || arguments.Any(argument => argument.IsOmitted))
+        {
+            return false;
+        }
+
+        return arguments.Select((argument, index) =>
+                argument.InferredDataType == Parameters[index].DataType
+                && argument.IsWritableReference == Parameters[index].IsReferenceValue)
+            .All(matches => matches);
+    }
+
+    public IEnumerable<int> GetIncompatibleArgumentPositions(
+        ProcedureUseArgument[] arguments,
+        Func<ProcedureUseArgument, DataType?> resolveDataType)
+    {
+        for (var index = 0; index < Math.Min(arguments.Length, Parameters.Length); index++)
+        {
+            var argument = arguments[index];
+            if (argument.IsOmitted)
+            {
+                continue;
+            }
+
+            var argumentType = resolveDataType(argument);
+            if (!Parameters[index].AcceptsArgument(argumentType, argument.IsWritableReference))
+            {
+                yield return index;
+            }
+        }
     }
     
     private const string ParameterDelimiter = ", ";

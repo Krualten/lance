@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - parsed and resolved path-qualified `PCALL` calls with parameter transfer and strict NC paths.
 - accepted SINUMERIK Operate `GROUP_BEGIN`, `GROUP_END` and `GROUP_ADDEND` metadata without treating them as executable calls.
 - preserved omitted procedure-argument positions and enforced mandatory `VAR` and `AXIS` transfers.
+- validated safely inferred manufacturer-cycle argument types and writable `VAR` references.
 
 ## [1.0.1] - 2023-06-03
 

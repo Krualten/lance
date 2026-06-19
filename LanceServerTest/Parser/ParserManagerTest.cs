@@ -368,6 +368,22 @@ PCALL/_N_WKS_DIR/_N_LIBRARY_WPD/_N_TEST_HELPER_SPF(mainAxis)
             symbolUses.OfType<ProcedureUse>().Single().Identifier);
     }
 
+    [TestMethod]
+    public void ExternDeclarationCapturesTypesAndReferenceParameters()
+    {
+        var code = "EXTERN TEST_HELPER(REAL, VAR INT, STRING[20], AXIS)" + Environment.NewLine;
+        var symbolUses = GetSymbolUses(code, out var parserDiagnostics);
+        var arguments = symbolUses.OfType<DeclarationProcedureUse>().Single().Arguments;
+
+        Assert.AreEqual(0, parserDiagnostics.Count);
+        CollectionAssert.AreEqual(
+            new DataType?[] { DataType.Real, DataType.Int, DataType.String, DataType.Axis },
+            arguments.Select(argument => argument.InferredDataType).ToArray());
+        CollectionAssert.AreEqual(
+            new[] { false, true, false, false },
+            arguments.Select(argument => argument.IsWritableReference).ToArray());
+    }
+
     [DataTestMethod]
     [DataRow("TEST_HELPER(firstValue,,thirdValue,)")]
     [DataRow("MCALL TEST_HELPER(firstValue,,thirdValue,)")]
@@ -409,6 +425,31 @@ PCALL/_N_WKS_DIR/_N_LIBRARY_WPD/_N_TEST_HELPER_SPF(mainAxis)
         CollectionAssert.AreEqual(
             new[] { false, true, false },
             arguments.Select(argument => argument.IsOmitted).ToArray());
+    }
+
+    [TestMethod]
+    public void ProcedureArgumentsCaptureSafeTypeInformation()
+    {
+        var code = @"TEST_HELPER(12, 3.5, TRUE, ""text"", X, localResult, R10)" + Environment.NewLine;
+        var symbolUses = GetSymbolUses(code, out var parserDiagnostics);
+        var arguments = symbolUses.OfType<ProcedureUse>().Single().Arguments;
+
+        Assert.AreEqual(0, parserDiagnostics.Count);
+        CollectionAssert.AreEqual(
+            new DataType?[]
+            {
+                DataType.Int,
+                DataType.Real,
+                DataType.Bool,
+                DataType.String,
+                DataType.Axis,
+                null,
+                DataType.Real
+            },
+            arguments.Select(argument => argument.InferredDataType).ToArray());
+        Assert.AreEqual("localResult", arguments[5].ReferencedIdentifier);
+        Assert.IsTrue(arguments[5].IsWritableReference);
+        Assert.IsTrue(arguments[6].IsWritableReference);
     }
 
     [TestMethod]
