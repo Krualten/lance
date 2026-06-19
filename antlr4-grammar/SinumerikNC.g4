@@ -949,7 +949,9 @@ preprocessingStop: SYNR | SYNW | SYNRW;
 accessRights: (accessDesignation intUnsigned)+;
 accessDesignation: ACCESS_READ | ACCESS_WRITE | READ_PROGRAM | WRITE_PROGRAM | READ_OPI | WRITE_OPI;
 variableModifiers: physicalUnit? limitValues?;
-physicalUnit: PHYS_UNIT intUnsigned;
+// SINUMERIK definition files use both the documented PHY spelling and the
+// commonly deployed PHU spelling for a variable's physical-unit identifier.
+physicalUnit: (PHYS_UNIT | PHU) intUnsigned;
 limitValues: ((LOWER_LIMIT | UPPER_LIMIT) expression)+;
 
 variableNameDeclaration: userVariableIdentifier (variableAssignmentExpression | arrayDefinition arrayAssignmentExpression?)?;

@@ -5,6 +5,7 @@ using LanceServer.Core.Symbol;
 using LanceServer.Core.Workspace;
 using LanceServer.Parser;
 using LanceServer.Preprocessor;
+using LanceServer.RequestHandler.Diagnostic;
 using LanceServerTest.Core.Workspace;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -73,6 +74,67 @@ public class GudVariableTest
             // Assert
             Assert.AreEqual(1, symbols.Count);
             Assert.AreEqual(definitionUri, symbols[0].SourceDocument);
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [DataTestMethod]
+    [DataRow("DEF NCK REAL PHU 2 GD_ATC_Height_Clearance")]
+    [DataRow("DEF NCK APWP 1 APRP 7 APWB 1 APRB 7 REAL PHU 4 LLI 0 _CAA_MAX_CUT_FEED=5001")]
+    [DataRow("DEF NCK REAL PHY 2 GD_DOCUMENTED_UNIT")]
+    public void GudPhysicalUnitModifiersAreParsed(string declaration)
+    {
+        var document = CreateParsedDefinitionDocument(
+            declaration + Environment.NewLine,
+            out var parserResult);
+        var symbols = new ParserManager()
+            .GetSymbolTableForDocument(document)
+            .OfType<VariableSymbol>()
+            .ToList();
+
+        Assert.AreEqual(
+            0,
+            parserResult.Diagnostics.Count,
+            string.Join(Environment.NewLine, parserResult.Diagnostics.Select(diagnostic => diagnostic.Message)));
+        Assert.AreEqual(1, symbols.Count);
+    }
+
+    [TestMethod]
+    public void GudWithPhuIsAvailableAcrossWorkspace()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "lance-gud-phu-" + Guid.NewGuid());
+        Directory.CreateDirectory(directory);
+        var definitionPath = Path.Combine(directory, "MGUD_ATC.DEF");
+        var cyclePath = Path.Combine(directory, "ATC_CHANGE.SPF");
+        File.WriteAllText(
+            definitionPath,
+            "DEF NCK REAL PHU 2 GD_ATC_Height_Clearance" + Environment.NewLine);
+        File.WriteAllText(
+            cyclePath,
+            "GD_ATC_Height_Clearance = 25.0" + Environment.NewLine);
+
+        try
+        {
+            var configurationManager = CreateConfigurationManager();
+            var preprocessor = CreatePreprocessor();
+            var workspace = new Workspace(new ParserManager(), preprocessor.Object, configurationManager.Object);
+            var definitionUri = new Uri(definitionPath);
+            var cycleUri = new Uri(cyclePath);
+
+            workspace.GetSymbolisedDocument(definitionUri);
+            var cycleDocument = workspace.GetSymbolUseExtractedDocument(cycleUri);
+            var diagnostics = new DiagnosticHandler()
+                .HandleRequest(cycleDocument, workspace)
+                .Items;
+
+            Assert.IsFalse(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.Equals(
+                        "Cannot resolve symbol GD_ATC_Height_Clearance.",
+                        StringComparison.Ordinal)));
         }
         finally
         {
