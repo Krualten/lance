@@ -66,6 +66,24 @@ public class SinumerikProgramSearchPathTest
     }
 
     [TestMethod]
+    public void NestedManufacturerCycleUsesManufacturerCyclePriority()
+    {
+        var reference = CreateUri("NC", "WKS.DIR", "PART.WPD", "MAIN.MPF");
+        var candidates = new[]
+        {
+            CreateProcedure("NC", "OTHER.DIR", "HELPER.SPF"),
+            CreateProcedure("NC", "CMA.DIR", "ATC", "HELPER.SPF")
+        };
+
+        var orderedPaths = SinumerikProgramSearchPath
+            .OrderCandidates(candidates, reference, Array.Empty<string>())
+            .Select(symbol => symbol.SourceDocument.LocalPath)
+            .ToList();
+
+        Assert.AreEqual(CreatePath("NC", "CMA.DIR", "ATC", "HELPER.SPF"), orderedPaths[0]);
+    }
+
+    [TestMethod]
     public void CallPathDirectoryIsSearchedBeforeUserCycles()
     {
         var reference = CreateUri("NC", "WKS.DIR", "PART.WPD", "MAIN.MPF");

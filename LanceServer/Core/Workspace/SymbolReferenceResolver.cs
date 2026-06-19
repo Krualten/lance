@@ -15,7 +15,16 @@ public static class SymbolReferenceResolver
         AbstractSymbolUse symbolUse,
         IEnumerable<AbstractSymbol> candidates)
     {
+        var candidateList = candidates.ToList();
         var referencesProcedure = symbolUse is ProcedureUse or DeclarationProcedureUse;
-        return candidates.Where(candidate => candidate is ProcedureSymbol == referencesProcedure);
+        if (referencesProcedure)
+        {
+            return candidateList.Where(candidate => candidate is ProcedureSymbol);
+        }
+
+        var nonProcedures = candidateList.Where(candidate => candidate is not ProcedureSymbol).ToList();
+        return nonProcedures.Count > 0
+            ? nonProcedures
+            : candidateList.Where(candidate => candidate is ProcedureSymbol);
     }
 }

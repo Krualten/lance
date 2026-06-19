@@ -39,6 +39,20 @@ public class SymbolReferenceResolverTest
         CollectionAssert.AreEqual(new AbstractSymbol[] { macro }, candidates);
     }
 
+    [TestMethod]
+    public void BareSymbolUseFallsBackToProcedureWhenNoDataSymbolExists()
+    {
+        var source = CreateUri("MAIN.MPF");
+        var procedure = CreateProcedure();
+        var use = new SymbolUse("SHARED", CreateRange(), source);
+
+        var candidates = SymbolReferenceResolver
+            .FilterCandidates(use, new AbstractSymbol[] { procedure })
+            .ToList();
+
+        CollectionAssert.AreEqual(new AbstractSymbol[] { procedure }, candidates);
+    }
+
     private static ProcedureSymbol CreateProcedure()
     {
         var range = CreateRange();

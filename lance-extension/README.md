@@ -30,14 +30,12 @@ To change the colors of the syntax highlighting you can [change the theme](https
 
 There are settings to set the file extensions of the different file types of the language. Per default .def, .mpf and .spf files are configured. These files are loaded on startup to provide the respective insights. 
 
-User, manufacturer and standard cycles in `CUS.DIR`, `CMA.DIR` and `CST.DIR` are recognized automatically. Additional OEM cycle folders can be configured with `lance.symbols.manufacturerCyclesDirectories`. Procedures found there are globally available and calls with parameters do not require an `EXTERN` declaration.
+User, manufacturer and standard cycles anywhere below `CUS.DIR`, `CMA.DIR` and `CST.DIR` are recognized automatically, including project-specific subfolder structures. Additional OEM cycle folders can be configured with `lance.symbols.manufacturerCyclesDirectories`. Procedures found there are globally available and calls with parameters do not require an `EXTERN` declaration.
 
 There are also some settings for a customizable preprocessor. It can be used to replace project specific placeholders before the file is parsed.
 
 ## Known Issues
 
 - macros can only have a literal, a command or a combination of commands which would be valid on a line alone as values.
-- axis names can only have the format \{letter\}\{number\} where letter is one of \[abcquvwxyz\].
-
 If you have any problems, see if there is a related issue or write me one on [github](https://github.com/Nuaduwodan/lance/issues).
 If you write me a ticket, it helps me a lot if you add the contents of the Lance output console to it. You can find that under "View" -> "Output" and then select "Lance" in the dropdown in the bottom right.

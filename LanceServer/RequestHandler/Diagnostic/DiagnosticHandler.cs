@@ -16,16 +16,18 @@ public class DiagnosticHandler : IDiagnosticHandler
         diagnostics.AddRange(document.ParserDiagnostics);
         
         var symbolUses = document.SymbolUseTable.GetAll();
+        var unresolvedMachineAxes = symbolUses
+            .OfType<SymbolUse>()
+            .Where(symbolUse => symbolUse.CanBeMachineAxis)
+            .Where(symbolUse => !workspace.GetSymbols(symbolUse).Any())
+            .Select(symbolUse => symbolUse.Identifier)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
         foreach (var symbolUse in symbolUses)
         {
             var referencedSymbols = workspace.GetSymbols(symbolUse).ToList();
             if (referencedSymbols.Any())
             {
-                if (symbolUse.Identifier != referencedSymbols.First().Identifier)
-                {
-                    diagnostics.Add(DiagnosticMessage.SymbolHasDifferentCapitalisation(symbolUse, referencedSymbols.First()));
-                }
-
                 if (referencedSymbols.First() is ProcedureSymbol procedureSymbol)
                 {
                     if (symbolUse is ProcedureUse procedureUse)
@@ -76,7 +78,7 @@ public class DiagnosticHandler : IDiagnosticHandler
                     }
                 }
             }
-            else
+            else if (!unresolvedMachineAxes.Contains(symbolUse.Identifier))
             {
                 diagnostics.Add(DiagnosticMessage.CannotResolveSymbol(symbolUse));
             }
@@ -115,7 +117,8 @@ public class DiagnosticHandler : IDiagnosticHandler
                 diagnostics.Add(DiagnosticMessage.GlobalSymbolHasDuplicates(globalSymbol, duplicateSymbols));
             }
             
-            if (globalSymbol is ProcedureSymbol procedureSymbol && filename != procedureSymbol.Identifier)
+            if (globalSymbol is ProcedureSymbol procedureSymbol
+                && !filename.Equals(procedureSymbol.Identifier, StringComparison.OrdinalIgnoreCase))
             {
                 diagnostics.Add(DiagnosticMessage.ProcedureFileNameMismatch(procedureSymbol, filename));
             }

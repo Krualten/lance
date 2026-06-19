@@ -30,12 +30,23 @@ public class DocumentInformationTest
     }
 
     [TestMethod]
-    public void NestedDirectoryBelowCycleDirectoryIsNotClassifiedAsCycle()
+    public void NestedDirectoryBelowCycleDirectoryIsClassifiedAsCycle()
     {
         var path = Path.Combine(Path.GetTempPath(), "CMA.DIR", "ARCHIVE", "HELPER.SPF");
         var documentInformation = new DocumentInformation(new Uri(path), CreateConfiguration(Array.Empty<string>()));
 
-        Assert.AreEqual(DocumentType.SubProcedure, documentInformation.DocumentType);
+        Assert.AreEqual(DocumentType.CycleSubProcedure, documentInformation.DocumentType);
+    }
+
+    [TestMethod]
+    public void NestedDirectoryBelowConfiguredCycleDirectoryIsClassifiedAsCycle()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "OEM_CYCLES", "ATC", "HELPER.SPF");
+        var documentInformation = new DocumentInformation(
+            new Uri(path),
+            CreateConfiguration(new[] { "oem_cycles" }));
+
+        Assert.AreEqual(DocumentType.CycleSubProcedure, documentInformation.DocumentType);
     }
 
     private static DocumentInformation CreateDocumentInformation(

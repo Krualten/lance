@@ -772,6 +772,193 @@ ENDPROC
         }
     }
 
+    [TestMethod]
+    public void NestedManufacturerCycleDoesNotRequireExternDeclaration()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "lance-nested-cycle-" + Guid.NewGuid());
+        var cycleDirectory = Path.Combine(directory, "CMA.DIR", "ATC");
+        Directory.CreateDirectory(cycleDirectory);
+        var helperPath = Path.Combine(cycleDirectory, "TEST_HELPER.SPF");
+        var mainPath = Path.Combine(directory, "TEST_MAIN.MPF");
+        File.WriteAllText(
+            helperPath,
+            @"PROC TEST_HELPER(REAL targetPos)
+RET
+ENDPROC
+");
+        File.WriteAllText(
+            mainPath,
+            @"PROC TEST_MAIN()
+DEF REAL mainPos
+TEST_HELPER(mainPos)
+RET
+ENDPROC
+");
+
+        try
+        {
+            var configurationManager = CreateConfigurationManager();
+            var workspace = new Workspace(
+                new ParserManager(),
+                new PlaceholderPreprocessor(configurationManager),
+                configurationManager);
+            workspace.GetSymbolisedDocument(new Uri(helperPath));
+            var mainDocument = workspace.GetSymbolUseExtractedDocument(new Uri(mainPath));
+
+            var diagnostics = new DiagnosticHandler().HandleRequest(mainDocument, workspace).Items;
+
+            Assert.IsFalse(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.StartsWith("Missing extern declaration", StringComparison.Ordinal)));
+            Assert.IsFalse(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.Equals("Cannot resolve symbol TEST_HELPER.", StringComparison.Ordinal)));
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [TestMethod]
+    public void CaseDifferencesDoNotProduceDiagnostics()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "lance-case-" + Guid.NewGuid());
+        Directory.CreateDirectory(directory);
+        var helperPath = Path.Combine(directory, "mixedcase.SPF");
+        var mainPath = Path.Combine(directory, "TEST_MAIN.MPF");
+        File.WriteAllText(
+            helperPath,
+            @"PROC MixedCase()
+RET
+ENDPROC
+");
+        File.WriteAllText(
+            mainPath,
+            @"PROC TEST_MAIN()
+mixedcase()
+RET
+ENDPROC
+");
+
+        try
+        {
+            var configurationManager = CreateConfigurationManager();
+            var workspace = new Workspace(
+                new ParserManager(),
+                new PlaceholderPreprocessor(configurationManager),
+                configurationManager);
+            var helperDocument = workspace.GetSymbolUseExtractedDocument(new Uri(helperPath));
+            var mainDocument = workspace.GetSymbolUseExtractedDocument(new Uri(mainPath));
+
+            var diagnostics = new DiagnosticHandler().HandleRequest(helperDocument, workspace).Items
+                .Concat(new DiagnosticHandler().HandleRequest(mainDocument, workspace).Items)
+                .ToArray();
+
+            Assert.IsFalse(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.Contains("capitalisation", StringComparison.OrdinalIgnoreCase)));
+            Assert.IsFalse(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.Contains("does not match file name", StringComparison.Ordinal)));
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [TestMethod]
+    public void ProcedureWithoutParametersCanBeCalledWithoutParentheses()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "lance-bare-call-" + Guid.NewGuid());
+        Directory.CreateDirectory(directory);
+        var helperPath = Path.Combine(directory, "MOVE_SAFE.SPF");
+        var mainPath = Path.Combine(directory, "TEST_MAIN.MPF");
+        File.WriteAllText(
+            helperPath,
+            @"PROC MOVE_SAFE()
+RET
+ENDPROC
+");
+        File.WriteAllText(
+            mainPath,
+            @"PROC TEST_MAIN()
+MOVE_SAFE
+RET
+ENDPROC
+");
+
+        try
+        {
+            var configurationManager = CreateConfigurationManager();
+            var workspace = new Workspace(
+                new ParserManager(),
+                new PlaceholderPreprocessor(configurationManager),
+                configurationManager);
+            workspace.GetSymbolisedDocument(new Uri(helperPath));
+            var mainDocument = workspace.GetSymbolUseExtractedDocument(new Uri(mainPath));
+
+            var diagnostics = new DiagnosticHandler().HandleRequest(mainDocument, workspace).Items;
+
+            Assert.AreEqual(
+                0,
+                mainDocument.ParserDiagnostics.Count,
+                string.Join(Environment.NewLine, mainDocument.ParserDiagnostics.Select(diagnostic => diagnostic.Message)));
+            Assert.IsFalse(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.Equals("Cannot resolve symbol MOVE_SAFE.", StringComparison.Ordinal)));
+            Assert.IsFalse(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.Contains("arguments do not match", StringComparison.Ordinal)));
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [TestMethod]
+    public void UndeclaredMachineAxisNameDoesNotProduceUnresolvedSymbolDiagnostic()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "lance-axis-" + Guid.NewGuid());
+        Directory.CreateDirectory(directory);
+        var mainPath = Path.Combine(directory, "TEST_MAIN.MPF");
+        File.WriteAllText(
+            mainPath,
+            @"PROC TEST_MAIN()
+DEF REAL limit
+PF=-215
+limit=$MA_POS_LIMIT_PLUS[PF]
+RET
+ENDPROC
+");
+
+        try
+        {
+            var configurationManager = CreateConfigurationManager();
+            var workspace = new Workspace(
+                new ParserManager(),
+                new PlaceholderPreprocessor(configurationManager),
+                configurationManager);
+            var mainDocument = workspace.GetSymbolUseExtractedDocument(new Uri(mainPath));
+
+            var diagnostics = new DiagnosticHandler().HandleRequest(mainDocument, workspace).Items;
+
+            Assert.AreEqual(
+                0,
+                mainDocument.ParserDiagnostics.Count,
+                string.Join(Environment.NewLine, mainDocument.ParserDiagnostics.Select(diagnostic => diagnostic.Message)));
+            Assert.IsFalse(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.Equals("Cannot resolve symbol PF.", StringComparison.Ordinal)));
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
     private static ConfigurationManager CreateConfigurationManager()
     {
         var configuration = new ServerConfiguration

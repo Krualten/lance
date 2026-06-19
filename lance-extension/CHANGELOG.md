@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0] - 2026-06-18
+## [1.1.0] - 2026-06-19
 
 ### Added
 
@@ -39,6 +39,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - accepted SINUMERIK Operate `GROUP_BEGIN`, `GROUP_END` and `GROUP_ADDEND` metadata without treating them as executable calls.
 - preserved omitted procedure-argument positions and enforced mandatory `VAR` and `AXIS` transfers.
 - validated safely inferred manufacturer-cycle argument types and writable `VAR` references.
+- recognized cycles in any subdirectory below `CUS.DIR`, `CMA.DIR`, `CST.DIR` or a configured OEM cycle directory.
+- removed diagnostics caused only by differences in identifier or procedure filename capitalization.
+- resolved parameterless procedure calls written without parentheses.
+- accepted freely configured machine-axis names without reporting them as unresolved variables.
 
 ## [1.0.1] - 2023-06-03
 

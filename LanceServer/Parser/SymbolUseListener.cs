@@ -41,7 +41,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
     public override void ExitUserVariableAssignment(SinumerikNCParser.UserVariableAssignmentContext context)
     {
         if (IsOperateGroupMetadata) return;
-        AddIdentifierIfNotPlaceholder(context.userVariableIdentifier());
+        AddIdentifierIfNotPlaceholder(context.userVariableIdentifier(), canBeMachineAxis: true);
     }
 
     /// <summary>
@@ -61,7 +61,9 @@ public class SymbolUseListener : SinumerikNCBaseListener
     public override void ExitVariableUse(SinumerikNCParser.VariableUseContext context)
     {
         if (IsOperateGroupMetadata) return;
-        AddIdentifierIfNotPlaceholder(context.userVariableIdentifier());
+        AddIdentifierIfNotPlaceholder(
+            context.userVariableIdentifier(),
+            canBeMachineAxis: IsSystemVariableIndex(context));
     }
 
     /// <summary>
@@ -490,14 +492,31 @@ public class SymbolUseListener : SinumerikNCBaseListener
         return Enum.TryParse<DataType>(text, true, out var dataType) ? dataType : null;
     }
 
-    private void AddTokenIfNotPlaceholder(IToken token)
+    private static bool IsSystemVariableIndex(ParserRuleContext context)
+    {
+        for (var parent = context.Parent; parent != null; parent = parent.Parent)
+        {
+            if (parent is SinumerikNCParser.SystemVariableUseContext)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void AddTokenIfNotPlaceholder(IToken token, bool canBeMachineAxis = false)
     {
         if (_document.PlaceholderTable.ContainedPlaceholder(token.Text))
         {
             return;
         }
         
-        SymbolUseTable.Add(new SymbolUse(token.Text, ParserHelper.GetRangeForToken(token), _document.Information.Uri));
+        SymbolUseTable.Add(new SymbolUse(
+            token.Text,
+            ParserHelper.GetRangeForToken(token),
+            _document.Information.Uri,
+            canBeMachineAxis));
     }
 
     private void AddNameIfNotPlaceholder(ITerminalNode? name)
@@ -510,14 +529,16 @@ public class SymbolUseListener : SinumerikNCBaseListener
         AddTokenIfNotPlaceholder(name.Symbol);
     }
 
-    private void AddIdentifierIfNotPlaceholder(ParserRuleContext? identifier)
+    private void AddIdentifierIfNotPlaceholder(
+        ParserRuleContext? identifier,
+        bool canBeMachineAxis = false)
     {
         if (identifier == null)
         {
             return;
         }
 
-        AddTokenIfNotPlaceholder(identifier.Start);
+        AddTokenIfNotPlaceholder(identifier.Start, canBeMachineAxis);
     }
 
     private static bool TryGetStringLiteral(string text, out string value)

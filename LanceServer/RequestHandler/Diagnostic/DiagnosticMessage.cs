@@ -27,30 +27,6 @@ public static class DiagnosticMessage
 
     private const string DiagnosticSource = "Lance";
     
-    public static LspTypes.Diagnostic SymbolHasDifferentCapitalisation(AbstractSymbolUse symbolUse, AbstractSymbol symbol)
-    {
-        return new LspTypes.Diagnostic
-        {
-            Code = symbolUse.Identifier,
-            Range = symbolUse.Range,
-            Severity = DiagnosticSeverity.Warning,
-            Source = DiagnosticSource,
-            RelatedInformation = new[]
-            {
-                new DiagnosticRelatedInformation
-                {
-                    Location = new Location
-                    {
-                        Range = symbol.IdentifierRange,
-                        Uri = FileUtil.UriToUriString(symbol.SourceDocument)
-                    },
-                    Message = $"{symbol.Identifier} has not the same capitalisation as at least one of its uses."
-                }
-            },
-            Message = $"{symbolUse.Identifier} has not the same capitalisation as its definition: {symbol.Identifier}."
-        };
-    }
-
     public static LspTypes.Diagnostic UnnecessaryExtern(AbstractSymbolUse symbolUse)
     {
         return new LspTypes.Diagnostic

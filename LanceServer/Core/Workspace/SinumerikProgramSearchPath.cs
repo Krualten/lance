@@ -105,16 +105,38 @@ public static class SinumerikProgramSearchPath
             return CallPathDirectoryRank;
         }
 
-        var directoryName = NormalizeDirectoryName(Path.GetFileName(candidateDirectory));
-        return directoryName switch
+        foreach (var directoryName in NormalizeProgramDirectoryPath(candidateDirectory).Reverse())
         {
-            "spf" => SubprogramDirectoryRank,
-            "cus" => UserCyclesDirectoryRank,
-            "cma" => ManufacturerCyclesDirectoryRank,
-            "cst" => StandardCyclesDirectoryRank,
-            _ when manufacturerDirectories.Contains(directoryName) => ManufacturerCyclesDirectoryRank,
-            _ => OtherDirectoryRank
-        };
+            var rank = directoryName switch
+            {
+                "spf" => SubprogramDirectoryRank,
+                "cus" => UserCyclesDirectoryRank,
+                "cma" => ManufacturerCyclesDirectoryRank,
+                "cst" => StandardCyclesDirectoryRank,
+                _ when manufacturerDirectories.Contains(directoryName) => ManufacturerCyclesDirectoryRank,
+                _ => OtherDirectoryRank
+            };
+
+            if (rank != OtherDirectoryRank)
+            {
+                return rank;
+            }
+        }
+
+        return OtherDirectoryRank;
+    }
+
+    internal static bool IsWithinCycleDirectory(
+        string directoryPath,
+        IEnumerable<string> configuredManufacturerCyclesDirectories)
+    {
+        var configuredDirectories = configuredManufacturerCyclesDirectories
+            .Select(NormalizeDirectoryName)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        return NormalizeProgramDirectoryPath(directoryPath).Any(directoryName =>
+            StandardCycleDirectories.Contains(directoryName)
+            || configuredDirectories.Contains(directoryName));
     }
 
     internal static string NormalizeDirectoryName(string? directoryName)

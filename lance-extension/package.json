@@ -61,7 +61,7 @@
               "lance.symbols.manufacturerCyclesDirectories":{
                 "type": "array",
                 "default": ["cma.dir"],
-                "description": "Additional folder names containing OEM or manufacturer cycles. CUS.DIR, CMA.DIR and CST.DIR are recognized automatically. Cycle calls with parameters do not require EXTERN declarations.",
+                "description": "Additional folder names containing OEM or manufacturer cycles. CUS.DIR, CMA.DIR and CST.DIR, including all their subdirectories, are recognized automatically. Cycle calls with parameters do not require EXTERN declarations.",
                 "order": 14
               },
               "lance.placeholderPreprocessor.fileExtensions":{
