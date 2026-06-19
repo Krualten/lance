@@ -1352,7 +1352,7 @@ command
     | STOPFIFO arguments?
     | SUPA arguments?
     | SUPD arguments?
-    | T (numericUnsigned | ASSIGNMENT expression)
+    | T (numericUnsigned | commandParameterAssignment? ASSIGNMENT expression)
     | TCARR arguments?
     | TCOABS arguments?
     | TCOFR arguments?
@@ -1397,7 +1397,7 @@ command
     | macroUse
     ;
 
-gCode: GCODE codeAssignment;
+gCode: GCODE (codeAssignment | codeAssignmentParameterized);
 hCode: HCODE (codeAssignment | codeAssignmentParameterized);
 mCode: MCODE (codeAssignment | codeAssignmentParameterized);
 

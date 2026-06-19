@@ -42,7 +42,28 @@ public class LanguageTokenListener : SinumerikNCBaseListener
         
         var code = context.GCODE().GetText();
         var codeAssignment = context.codeAssignment();
-        var number = codeAssignment.intUnsigned() != null ? codeAssignment.intUnsigned().GetText() : codeAssignment.codeAssignmentExpression().expression().GetText();
+        var codeAssignmentParameterized = context.codeAssignmentParameterized();
+        string number;
+        if (codeAssignment != null)
+        {
+            if (codeAssignment.exception != null) return;
+
+            number = codeAssignment.intUnsigned() != null
+                ? codeAssignment.intUnsigned().GetText()
+                : codeAssignment.codeAssignmentExpression()?.expression()?.GetText() ?? string.Empty;
+        }
+        else
+        {
+            if (codeAssignmentParameterized?.exception != null) return;
+
+            number = codeAssignmentParameterized?
+                .codeAssignmentExpression()?
+                .expression()?
+                .GetText() ?? string.Empty;
+        }
+
+        if (!short.TryParse(number, out _)) return;
+
         code += number.TrimStart('0').PadLeft(1, '0');
         var range = ParserHelper.GetRangeForToken(context.Start);
         LanguageTokens.Add(new LanguageToken(code, range));

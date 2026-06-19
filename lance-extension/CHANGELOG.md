@@ -48,6 +48,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - allowed `PROC` programs to reach the end of the file without requiring `ENDPROC`, regardless of their final valid NC instruction.
 - parsed tool, offset and machine addresses such as `T0`, `T=...`, `D1`, `D=...`, `DL=...`, `MTL=...`, `TOFFL=...` and indexed `FOC`.
 - resolved numbered `L` subprogram calls such as `L601` and `L611`.
+- parsed indexed tool selections and G-group assignments such as `T[$C_TE]=...` and `G[8]=...`.
+- prevented semantic-token extraction from crashing on parameterized G-group assignments.
 
 ## [1.0.1] - 2023-06-03
 

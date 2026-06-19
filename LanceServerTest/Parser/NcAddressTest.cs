@@ -14,6 +14,8 @@ public class NcAddressTest
     [DataRow("T0")]
     [DataRow("T=savedToolName")]
     [DataRow("T=\"\"")]
+    [DataRow("T[$C_TE]=0")]
+    [DataRow("MTL=$C_MTL T[$C_TE]=$C_T")]
     [DataRow("D1")]
     [DataRow("D=edgeIni")]
     [DataRow("DL=$C_DL")]
@@ -21,6 +23,7 @@ public class NcAddressTest
     [DataRow("MTL=$C_MTL T=$C_T")]
     [DataRow("D1 M17")]
     [DataRow("AX[vertAxis]=10 F=2000 FOC[vertAxis] FXST[vertAxis]=50")]
+    [DataRow("G[8]=frameActual")]
     public void ToolAndMachineAddressesAreParsed(string block)
     {
         var result = new ParserManager().Parse(CreateDocument(block + Environment.NewLine));
@@ -53,6 +56,24 @@ public class NcAddressTest
         Assert.AreEqual(0, parserResult.Diagnostics.Count);
         Assert.AreEqual(expectedIdentifier, procedureUse.Identifier);
         Assert.AreEqual(0, procedureUse.Arguments.Length);
+    }
+
+    [TestMethod]
+    public void ParameterizedGGroupDoesNotCrashLanguageTokenExtraction()
+    {
+        var parserManager = new ParserManager();
+        var preprocessedDocument = CreateDocument("G[8]=frameActual" + Environment.NewLine);
+        var parserResult = parserManager.Parse(preprocessedDocument);
+        var parsedDocument = new ParsedDocument(
+            preprocessedDocument,
+            parserResult.ParseTree,
+            parserResult.Diagnostics);
+        var symbolisedDocument = new SymbolisedDocument(parsedDocument, new SymbolTable());
+
+        var tokens = parserManager.GetLanguageTokensForDocument(symbolisedDocument).ToList();
+
+        Assert.AreEqual(0, parserResult.Diagnostics.Count);
+        Assert.IsNotNull(tokens);
     }
 
     private static PreprocessedDocument CreateDocument(string code)
