@@ -560,6 +560,13 @@ public interface ISinumerikNCVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitAndExpression([NotNull] SinumerikNCParser.AndExpressionContext context);
 	/// <summary>
+	/// Visit a parse tree produced by the <c>frameCompositionExpression</c>
+	/// labeled alternative in <see cref="SinumerikNCParser.expression"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitFrameCompositionExpression([NotNull] SinumerikNCParser.FrameCompositionExpressionContext context);
+	/// <summary>
 	/// Visit a parse tree produced by the <c>binaryAndExpression</c>
 	/// labeled alternative in <see cref="SinumerikNCParser.expression"/>.
 	/// </summary>
@@ -841,6 +848,12 @@ public interface ISinumerikNCVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitFunction([NotNull] SinumerikNCParser.FunctionContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="SinumerikNCParser.frameFunction"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitFrameFunction([NotNull] SinumerikNCParser.FrameFunctionContext context);
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="SinumerikNCParser.mathFunction"/>.
 	/// </summary>

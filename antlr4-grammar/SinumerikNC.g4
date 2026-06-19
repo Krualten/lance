@@ -1062,6 +1062,7 @@ expression
     | expression XOR expression                                                     #exclusiveOrExpression
     | expression OR expression                                                      #inclusiveOrExpression
     | expression CONCAT expression                                                  #concatExpression
+    | expression DOUBLE_COLON expression                                            #frameCompositionExpression
     | expression (EQUAL|NOT_EQUAL|LESS_EQUAL|GREATER_EQUAL|LESS|GREATER) expression #relationalExpression
     | primaryExpression                                                             #primaryExpressionLabel
     ;
@@ -1603,6 +1604,7 @@ predefinedProcedure
 function
     : mathFunction
     | stringFunction
+    | frameFunction
     | CTAB arguments?
     | CTABEXISTS arguments?
     | CTABFNO arguments?
@@ -1678,6 +1680,15 @@ function
     | TOOLENV arguments?
     | TOOLGNT arguments?
     | TOOLGT arguments?
+    ;
+
+frameFunction
+    : CTRANS arguments
+    | CMIRROR arguments
+    | CSCALE arguments
+    | CROT arguments
+    | CROTS arguments
+    | CRPL arguments
     ;
 
 mathFunction // done

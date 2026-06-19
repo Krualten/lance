@@ -1092,6 +1092,20 @@ public partial class SinumerikNCBaseListener : ISinumerikNCListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitAndExpression([NotNull] SinumerikNCParser.AndExpressionContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by the <c>frameCompositionExpression</c>
+	/// labeled alternative in <see cref="SinumerikNCParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterFrameCompositionExpression([NotNull] SinumerikNCParser.FrameCompositionExpressionContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>frameCompositionExpression</c>
+	/// labeled alternative in <see cref="SinumerikNCParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitFrameCompositionExpression([NotNull] SinumerikNCParser.FrameCompositionExpressionContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by the <c>binaryAndExpression</c>
 	/// labeled alternative in <see cref="SinumerikNCParser.expression"/>.
 	/// <para>The default implementation does nothing.</para>
@@ -1655,6 +1669,18 @@ public partial class SinumerikNCBaseListener : ISinumerikNCListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitFunction([NotNull] SinumerikNCParser.FunctionContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="SinumerikNCParser.frameFunction"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterFrameFunction([NotNull] SinumerikNCParser.FrameFunctionContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="SinumerikNCParser.frameFunction"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitFrameFunction([NotNull] SinumerikNCParser.FrameFunctionContext context) { }
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="SinumerikNCParser.mathFunction"/>.
 	/// <para>The default implementation does nothing.</para>

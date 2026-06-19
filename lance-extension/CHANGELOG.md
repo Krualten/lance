@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - resolved parameterless procedure calls written without parentheses.
 - accepted freely configured machine-axis names without reporting them as unresolved variables.
 - accepted `PHU` physical-unit modifiers in GUD declarations while retaining `PHY` compatibility.
+- parsed composite frame expressions using `CTRANS`, `CMIRROR`, `CSCALE`, `CROT`, `CROTS`, `CRPL` and the `:` composition operator.
 
 ## [1.0.1] - 2023-06-03
 

@@ -422,6 +422,8 @@ public class SymbolUseListener : SinumerikNCBaseListener
             case SinumerikNCParser.ToStringExpressionContext:
             case SinumerikNCParser.ConcatExpressionContext:
                 return DataType.String;
+            case SinumerikNCParser.FrameCompositionExpressionContext:
+                return DataType.Frame;
             case SinumerikNCParser.SignExpressionContext sign:
                 return InferPrimaryExpressionType(sign.primaryExpression());
             case SinumerikNCParser.PrimaryExpressionLabelContext primary:
@@ -443,9 +445,16 @@ public class SymbolUseListener : SinumerikNCBaseListener
             SinumerikNCParser.ConstantUseContext constant => InferConstantType(constant.constant()),
             SinumerikNCParser.RParamUseContext => DataType.Real,
             SinumerikNCParser.AxisUseContext => DataType.Axis,
+            SinumerikNCParser.FunctionUseContext functionUse
+                when IsFrameFunction(functionUse.function()) => DataType.Frame,
             SinumerikNCParser.NestedExpressionContext nested => InferExpressionType(nested.expression()),
             _ => null
         };
+    }
+
+    private static bool IsFrameFunction(SinumerikNCParser.FunctionContext? function)
+    {
+        return function?.frameFunction() != null;
     }
 
     private static DataType? InferConstantType(SinumerikNCParser.ConstantContext? constant)

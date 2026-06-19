@@ -919,6 +919,18 @@ public interface ISinumerikNCListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitAndExpression([NotNull] SinumerikNCParser.AndExpressionContext context);
 	/// <summary>
+	/// Enter a parse tree produced by the <c>frameCompositionExpression</c>
+	/// labeled alternative in <see cref="SinumerikNCParser.expression"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterFrameCompositionExpression([NotNull] SinumerikNCParser.FrameCompositionExpressionContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>frameCompositionExpression</c>
+	/// labeled alternative in <see cref="SinumerikNCParser.expression"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitFrameCompositionExpression([NotNull] SinumerikNCParser.FrameCompositionExpressionContext context);
+	/// <summary>
 	/// Enter a parse tree produced by the <c>binaryAndExpression</c>
 	/// labeled alternative in <see cref="SinumerikNCParser.expression"/>.
 	/// </summary>
@@ -1394,6 +1406,16 @@ public interface ISinumerikNCListener : IParseTreeListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void ExitFunction([NotNull] SinumerikNCParser.FunctionContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="SinumerikNCParser.frameFunction"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterFrameFunction([NotNull] SinumerikNCParser.FrameFunctionContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="SinumerikNCParser.frameFunction"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitFrameFunction([NotNull] SinumerikNCParser.FrameFunctionContext context);
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="SinumerikNCParser.mathFunction"/>.
 	/// </summary>
