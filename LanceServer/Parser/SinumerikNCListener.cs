@@ -1367,6 +1367,18 @@ public interface ISinumerikNCListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitOwnProcedureUse([NotNull] SinumerikNCParser.OwnProcedureUseContext context);
 	/// <summary>
+	/// Enter a parse tree produced by the <c>numberedProcedureUse</c>
+	/// labeled alternative in <see cref="SinumerikNCParser.procedure"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterNumberedProcedureUse([NotNull] SinumerikNCParser.NumberedProcedureUseContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>numberedProcedureUse</c>
+	/// labeled alternative in <see cref="SinumerikNCParser.procedure"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitNumberedProcedureUse([NotNull] SinumerikNCParser.NumberedProcedureUseContext context);
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="SinumerikNCParser.ownProcedure"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -1376,6 +1388,16 @@ public interface ISinumerikNCListener : IParseTreeListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void ExitOwnProcedure([NotNull] SinumerikNCParser.OwnProcedureContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="SinumerikNCParser.numberedProcedure"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterNumberedProcedure([NotNull] SinumerikNCParser.NumberedProcedureContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="SinumerikNCParser.numberedProcedure"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitNumberedProcedure([NotNull] SinumerikNCParser.NumberedProcedureContext context);
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="SinumerikNCParser.arguments"/>.
 	/// </summary>

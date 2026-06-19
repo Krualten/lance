@@ -46,6 +46,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - accepted `PHU` physical-unit modifiers in GUD declarations while retaining `PHY` compatibility.
 - parsed composite frame expressions using `CTRANS`, `CMIRROR`, `CSCALE`, `CROT`, `CROTS`, `CRPL` and the `:` composition operator.
 - allowed `PROC` programs to reach the end of the file without requiring `ENDPROC`, regardless of their final valid NC instruction.
+- parsed tool, offset and machine addresses such as `T0`, `T=...`, `D1`, `D=...`, `DL=...`, `MTL=...`, `TOFFL=...` and indexed `FOC`.
+- resolved numbered `L` subprogram calls such as `L601` and `L611`.
 
 ## [1.0.1] - 2023-06-03
 

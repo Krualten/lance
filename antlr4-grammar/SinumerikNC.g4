@@ -816,6 +816,7 @@ STOPFIFO:'stopfifo';
 SUPA:'supa';
 SUPD:'supd';
 T:'t';
+MTL:'mtl';
 TCARR:'tcarr';
 TCOABS:'tcoabs';
 TCOFR:'tcofr';
@@ -1162,7 +1163,7 @@ command
     | CUTCONON arguments?
     | CUTMOD arguments?
     | CUTMODK arguments?
-    | D arguments?
+    | D (numericUnsigned | ASSIGNMENT expression)
     | D0 arguments?
     | DIAM90 arguments?
     | DIAMCYCOF arguments?
@@ -1176,7 +1177,7 @@ command
     | DISRP arguments?
     | DITE arguments?
     | DITS arguments?
-    | DL arguments?
+    | DL (numericUnsigned | ASSIGNMENT expression | arguments)?
     | DRIVE
     | DRIVEA arguments?
     | DYNFINISH arguments?
@@ -1227,7 +1228,7 @@ command
     | KONTC arguments?
     | KONTT arguments?
     | KR arguments?
-    | L arguments?
+    | MTL ASSIGNMENT expression
     | LEAD arguments?
     | LFOF arguments?
     | LFON arguments?
@@ -1351,7 +1352,7 @@ command
     | STOPFIFO arguments?
     | SUPA arguments?
     | SUPD arguments?
-    | T arguments?
+    | T (numericUnsigned | ASSIGNMENT expression)
     | TCARR arguments?
     | TCOABS arguments?
     | TCOFR arguments?
@@ -1361,7 +1362,7 @@ command
     | THETA arguments?
     | TILT arguments?
     | TOFF arguments?
-    | TOFFL arguments?
+    | TOFFL (ASSIGNMENT expression | arguments)?
     | TOFFLR arguments?
     | TOFFR arguments?
     | TOFRAME arguments?
@@ -1392,6 +1393,7 @@ command
     | hCode
     | mCode
     | axisCode
+    | FOC (OPEN_BRACKET expression CLOSE_BRACKET)?
     | macroUse
     ;
 
@@ -1419,9 +1421,11 @@ spindle_identifier: SPINDLE_IDENTIFIER OPEN_PAREN expression CLOSE_PAREN;
 procedure
     : predefinedProcedure   #predefinedProcedureUse
     | ownProcedure          #ownProcedureUse
+    | numberedProcedure     #numberedProcedureUse
     ;
 
 ownProcedure: NAME arguments?;
+numberedProcedure: L intUnsigned;
 arguments: OPEN_PAREN expression? (COMMA expression?)* CLOSE_PAREN;
 
 //// predefined procedure
@@ -1786,7 +1790,6 @@ keyword
     | FINEA
     | FL
     | FMA
-    | FOC
     | FOCOF
     | FOCON
     | FPO

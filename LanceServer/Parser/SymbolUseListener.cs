@@ -109,6 +109,22 @@ public class SymbolUseListener : SinumerikNCBaseListener
     }
 
     /// <summary>
+    /// Creates a procedure reference for numbered L subprogram calls such as L601.
+    /// </summary>
+    public override void ExitNumberedProcedure(SinumerikNCParser.NumberedProcedureContext context)
+    {
+        if (IsOperateGroupMetadata) return;
+
+        var identifier = context.GetText();
+        SymbolUseTable.Add(new ProcedureUse(
+            identifier,
+            ParserHelper.GetRangeFromStartToEndToken(context.Start, context.Stop),
+            _document.Information.Uri,
+            Array.Empty<ProcedureUseArgument>(),
+            _activeCallPath));
+    }
+
+    /// <summary>
     /// Creates a procedure reference for PCALL, preserving its absolute NC directory,
     /// optional file identifier and parameter list.
     /// </summary>

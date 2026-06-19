@@ -1622,6 +1622,20 @@ public partial class SinumerikNCBaseListener : ISinumerikNCListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitOwnProcedureUse([NotNull] SinumerikNCParser.OwnProcedureUseContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by the <c>numberedProcedureUse</c>
+	/// labeled alternative in <see cref="SinumerikNCParser.procedure"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterNumberedProcedureUse([NotNull] SinumerikNCParser.NumberedProcedureUseContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>numberedProcedureUse</c>
+	/// labeled alternative in <see cref="SinumerikNCParser.procedure"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitNumberedProcedureUse([NotNull] SinumerikNCParser.NumberedProcedureUseContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="SinumerikNCParser.ownProcedure"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
@@ -1633,6 +1647,18 @@ public partial class SinumerikNCBaseListener : ISinumerikNCListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitOwnProcedure([NotNull] SinumerikNCParser.OwnProcedureContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="SinumerikNCParser.numberedProcedure"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterNumberedProcedure([NotNull] SinumerikNCParser.NumberedProcedureContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="SinumerikNCParser.numberedProcedure"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitNumberedProcedure([NotNull] SinumerikNCParser.NumberedProcedureContext context) { }
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="SinumerikNCParser.arguments"/>.
 	/// <para>The default implementation does nothing.</para>
