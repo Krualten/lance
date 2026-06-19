@@ -694,6 +694,74 @@ PCALL/_N_WKS_DIR/_N_LIBRARY_WPD/_N_TEST_HELPER_SPF(mainAxis)
                 StringComparison.Ordinal)));
     }
 
+    [DataTestMethod]
+    [DataRow(
+        @"[HEADER]
+FILE_TYPE = VCS
+FILE_VERSION = 7
+")]
+    [DataRow(
+        @"// X axis compensation data
+[EXX] // XTX
+AXIS_LENGTH [L_U] = 5000
+GRIDPOINTS = {
+0 0
+250 0
+}
+")]
+    public void VcsCompensationDataStoredAsSpfIsNotParsedAsNcCode(string code)
+    {
+        var preprocessedDocument = new PreprocessedDocument(
+            new DocumentInformationMock(new Uri("file:///VCS_X.SPF"), ".spf", DocumentType.SubProcedure),
+            code,
+            code,
+            new PlaceholderTable(new Dictionary<string, string>()),
+            "");
+        var parserManager = new ParserManager();
+        var parserResult = parserManager.Parse(preprocessedDocument);
+        var parsedDocument = new ParsedDocument(
+            preprocessedDocument,
+            parserResult.ParseTree,
+            parserResult.Diagnostics);
+
+        var symbols = parserManager.GetSymbolTableForDocument(parsedDocument).ToList();
+
+        Assert.IsInstanceOfType(parserResult.ParseTree, typeof(NonNcDataContext));
+        Assert.AreEqual(0, parserResult.Diagnostics.Count);
+        Assert.AreEqual(0, symbols.Count);
+    }
+
+    [TestMethod]
+    public void ExecutableVcsCycleIsStillParsedAsNcCode()
+    {
+        var code =
+            @"PROC VCS_ON()
+VCS_FILE_TABLE[0]=1
+M17
+";
+        var preprocessedDocument = new PreprocessedDocument(
+            new DocumentInformationMock(new Uri("file:///VCS_ON.SPF"), ".spf", DocumentType.SubProcedure),
+            code,
+            code,
+            new PlaceholderTable(new Dictionary<string, string>()),
+            "");
+        var parserManager = new ParserManager();
+        var parserResult = parserManager.Parse(preprocessedDocument);
+        var parsedDocument = new ParsedDocument(
+            preprocessedDocument,
+            parserResult.ParseTree,
+            parserResult.Diagnostics);
+
+        var symbols = parserManager.GetSymbolTableForDocument(parsedDocument).ToList();
+
+        Assert.IsFalse(parserResult.ParseTree is NonNcDataContext);
+        Assert.AreEqual(
+            0,
+            parserResult.Diagnostics.Count,
+            string.Join(Environment.NewLine, parserResult.Diagnostics.Select(diagnostic => diagnostic.Message)));
+        Assert.IsTrue(symbols.OfType<ProcedureSymbol>().Any(symbol => symbol.Identifier == "VCS_ON"));
+    }
+
     [TestMethod]
     public void OperateGroupMetadataDoesNotInterruptNcParsingOrCreateSymbolUses()
     {

@@ -53,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - kept concatenated indirect `CALL` targets dynamic instead of misreading the complete expression as a literal filename.
 - resolved direct `CALL ... BLOCK ... TO ...` boundaries against labels in the called program while preserving caller-side string variables.
 - accepted the documented trailing `<<` operator and optional execution parameter in `MSG(...)` without allowing truncated concatenations in other expressions.
+- recognized VCS volumetric-compensation data stored in `.SPF` files without parsing it as executable NC code or publishing false procedure symbols.
 
 ## [1.0.1] - 2023-06-03
 

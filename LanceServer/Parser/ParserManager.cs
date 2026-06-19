@@ -13,6 +13,11 @@ public class ParserManager : IParserManager
     /// <inheritdoc/>
     public ParserResult Parse(PreprocessedDocument document)
     {
+        if (VcsDataFileDetector.IsVcsData(document.Code))
+        {
+            return new ParserResult(new NonNcDataContext(), new List<Diagnostic>());
+        }
+
         var errorListener = new ErrorListener();
         var parser = new SinumerikNCParser(Tokenize(document, errorListener));
         parser.RemoveErrorListeners();
@@ -67,6 +72,11 @@ public class ParserManager : IParserManager
 
     private IList<AbstractSymbol> AddProcedureSymbolIfNeeded(ParsedDocument document, IList<AbstractSymbol> symbolTable)
     {
+        if (document.ParseTree is NonNcDataContext)
+        {
+            return symbolTable;
+        }
+
         var fileName = Path.GetFileNameWithoutExtension(document.Information.Uri.LocalPath);
         if (!symbolTable.Any(symbol => symbol is ProcedureSymbol) && document.Information.DocumentType is DocumentType.SubProcedure or DocumentType.CycleSubProcedure)
         {
