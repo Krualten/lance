@@ -641,6 +641,60 @@ PCALL/_N_WKS_DIR/_N_LIBRARY_WPD/_N_TEST_HELPER_SPF(mainAxis)
     }
 
     [TestMethod]
+    public void MessageTextAcceptsDocumentedTrailingConcatOperator()
+    {
+        var code = @"MSG(""$70400"" << maxSpeed * 0.5 <<)" + Environment.NewLine;
+        var symbolUses = GetSymbolUses(code, out var parserDiagnostics);
+
+        Assert.AreEqual(
+            0,
+            parserDiagnostics.Count,
+            string.Join(Environment.NewLine, parserDiagnostics.Select(diagnostic => diagnostic.Message)));
+        CollectionAssert.AreEqual(
+            new[] { "maxSpeed" },
+            symbolUses.OfType<SymbolUse>().Select(use => use.Identifier).ToArray());
+    }
+
+    [TestMethod]
+    public void MessageAcceptsOptionalExecutionParameter()
+    {
+        var code = @"MSG(""Actual RPM: "" << spindleSpeed <<, 1)" + Environment.NewLine;
+        var symbolUses = GetSymbolUses(code, out var parserDiagnostics);
+
+        Assert.AreEqual(
+            0,
+            parserDiagnostics.Count,
+            string.Join(Environment.NewLine, parserDiagnostics.Select(diagnostic => diagnostic.Message)));
+        CollectionAssert.AreEqual(
+            new[] { "spindleSpeed" },
+            symbolUses.OfType<SymbolUse>().Select(use => use.Identifier).ToArray());
+    }
+
+    [TestMethod]
+    public void TrailingConcatOutsideMessageRemainsInvalid()
+    {
+        var code = @"result = ""value"" <<" + Environment.NewLine;
+        GetSymbolUses(code, out var parserDiagnostics);
+
+        Assert.IsTrue(parserDiagnostics.Any(diagnostic =>
+            diagnostic.Message.Contains(
+                "only valid in an MSG message text",
+                StringComparison.Ordinal)));
+    }
+
+    [TestMethod]
+    public void TrailingConcatIsNotAcceptedInMessageExecutionParameter()
+    {
+        var code = @"MSG(""Machining part"", executionMode <<)" + Environment.NewLine;
+        GetSymbolUses(code, out var parserDiagnostics);
+
+        Assert.IsTrue(parserDiagnostics.Any(diagnostic =>
+            diagnostic.Message.Contains(
+                "only valid in an MSG message text",
+                StringComparison.Ordinal)));
+    }
+
+    [TestMethod]
     public void OperateGroupMetadataDoesNotInterruptNcParsingOrCreateSymbolUses()
     {
         var code =

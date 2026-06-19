@@ -52,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - prevented semantic-token extraction from crashing on parameterized G-group assignments.
 - kept concatenated indirect `CALL` targets dynamic instead of misreading the complete expression as a literal filename.
 - resolved direct `CALL ... BLOCK ... TO ...` boundaries against labels in the called program while preserving caller-side string variables.
+- accepted the documented trailing `<<` operator and optional execution parameter in `MSG(...)` without allowing truncated concatenations in other expressions.
 
 ## [1.0.1] - 2023-06-03
 

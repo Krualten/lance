@@ -18,6 +18,10 @@ public class ParserManager : IParserManager
         parser.RemoveErrorListeners();
         parser.AddErrorListener(errorListener);
         IParseTree tree = parser.file();
+
+        var validationListener = new SyntaxValidationListener(errorListener.Diagnostics);
+        new ParseTreeWalker().Walk(validationListener, tree);
+
         return new ParserResult(tree, errorListener.Diagnostics);
     }
 

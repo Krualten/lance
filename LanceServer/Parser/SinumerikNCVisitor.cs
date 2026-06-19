@@ -504,6 +504,13 @@ public interface ISinumerikNCVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitSyncActionAction([NotNull] SinumerikNCParser.SyncActionActionContext context);
 	/// <summary>
+	/// Visit a parse tree produced by the <c>trailingConcatExpression</c>
+	/// labeled alternative in <see cref="SinumerikNCParser.expression"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitTrailingConcatExpression([NotNull] SinumerikNCParser.TrailingConcatExpressionContext context);
+	/// <summary>
 	/// Visit a parse tree produced by the <c>toStringExpression</c>
 	/// labeled alternative in <see cref="SinumerikNCParser.expression"/>.
 	/// </summary>

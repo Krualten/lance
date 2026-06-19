@@ -1064,6 +1064,7 @@ expression
     | expression XOR expression                                                     #exclusiveOrExpression
     | expression OR expression                                                      #inclusiveOrExpression
     | expression CONCAT expression                                                  #concatExpression
+    | expression CONCAT                                                             #trailingConcatExpression
     | expression DOUBLE_COLON expression                                            #frameCompositionExpression
     | expression (EQUAL|NOT_EQUAL|LESS_EQUAL|GREATER_EQUAL|LESS|GREATER) expression #relationalExpression
     | primaryExpression                                                             #primaryExpressionLabel
@@ -1528,7 +1529,7 @@ predefinedProcedure
     | MASLOFS arguments?
     | MASLON arguments?
     | MMC arguments?
-    | MSG OPEN_PAREN expression? CLOSE_PAREN
+    | MSG OPEN_PAREN expression? (COMMA expression)? CLOSE_PAREN
     | MVTOOL arguments?
     | NEWCONF arguments?
     | NPROT arguments?

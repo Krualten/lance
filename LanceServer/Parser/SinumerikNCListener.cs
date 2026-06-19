@@ -823,6 +823,18 @@ public interface ISinumerikNCListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitSyncActionAction([NotNull] SinumerikNCParser.SyncActionActionContext context);
 	/// <summary>
+	/// Enter a parse tree produced by the <c>trailingConcatExpression</c>
+	/// labeled alternative in <see cref="SinumerikNCParser.expression"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterTrailingConcatExpression([NotNull] SinumerikNCParser.TrailingConcatExpressionContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>trailingConcatExpression</c>
+	/// labeled alternative in <see cref="SinumerikNCParser.expression"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitTrailingConcatExpression([NotNull] SinumerikNCParser.TrailingConcatExpressionContext context);
+	/// <summary>
 	/// Enter a parse tree produced by the <c>toStringExpression</c>
 	/// labeled alternative in <see cref="SinumerikNCParser.expression"/>.
 	/// </summary>

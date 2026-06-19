@@ -980,6 +980,20 @@ public partial class SinumerikNCBaseListener : ISinumerikNCListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitSyncActionAction([NotNull] SinumerikNCParser.SyncActionActionContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by the <c>trailingConcatExpression</c>
+	/// labeled alternative in <see cref="SinumerikNCParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterTrailingConcatExpression([NotNull] SinumerikNCParser.TrailingConcatExpressionContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>trailingConcatExpression</c>
+	/// labeled alternative in <see cref="SinumerikNCParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitTrailingConcatExpression([NotNull] SinumerikNCParser.TrailingConcatExpressionContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by the <c>toStringExpression</c>
 	/// labeled alternative in <see cref="SinumerikNCParser.expression"/>.
 	/// <para>The default implementation does nothing.</para>
