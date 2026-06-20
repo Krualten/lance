@@ -57,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - treated empty manufacturer-setting assignments as commissioning warnings and accepted valid final statements or labels without a physical trailing newline.
 - parsed numbered `L` procedure definitions and manufacturer-cycle `PROC` attributes such as `PREPRO`, `IPTRLOCK`, `ICYCOF` and `ICYCON`.
 - accepted `POLF[axis]=position` and `LFPOS` together in the same NC block for rapid retraction configuration.
+- resolved explicit calls to `CMA`, `CUS`, `CST` or configured manufacturer-cycle roots when development projects organize those cycles in nested subdirectories.
 
 ## [1.0.1] - 2023-06-03
 

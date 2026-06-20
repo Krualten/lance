@@ -111,6 +111,48 @@ ENDPROC
     }
 
     [TestMethod]
+    public void LiteralCallToCycleRootResolvesNestedDevelopmentCycle()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "lance-nested-cycle-call-" + Guid.NewGuid());
+        var bootDirectory = Path.Combine(directory, "CMA.DIR", "BOOT");
+        var genericDirectory = Path.Combine(directory, "CMA.DIR", "GENERIC");
+        Directory.CreateDirectory(bootDirectory);
+        Directory.CreateDirectory(genericDirectory);
+        var helperPath = Path.Combine(genericDirectory, "TRA_FC21.SPF");
+        var mainPath = Path.Combine(bootDirectory, "PROG_EVENT.SPF");
+        File.WriteAllText(helperPath, "M17" + Environment.NewLine);
+        File.WriteAllText(
+            mainPath,
+            "CALL \"/_N_CMA_DIR/_N_TRA_FC21_SPF\"" + Environment.NewLine +
+            "M17" + Environment.NewLine);
+
+        try
+        {
+            var configurationManager = CreateConfigurationManager();
+            var workspace = new Workspace(
+                new ParserManager(),
+                new PlaceholderPreprocessor(configurationManager),
+                configurationManager);
+            var helperUri = new Uri(helperPath);
+            workspace.GetSymbolisedDocument(helperUri);
+            var mainDocument = workspace.GetSymbolUseExtractedDocument(new Uri(mainPath));
+            var procedureUse = mainDocument.SymbolUseTable.GetAll().OfType<ProcedureUse>().Single();
+
+            var resolvedProcedure = workspace.GetSymbols(procedureUse).OfType<ProcedureSymbol>().Single();
+            var diagnostics = new DiagnosticHandler().HandleRequest(mainDocument, workspace).Items;
+
+            Assert.AreEqual(helperUri, resolvedProcedure.SourceDocument);
+            Assert.IsFalse(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.Equals("Cannot resolve symbol TRA_FC21.", StringComparison.Ordinal)));
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [TestMethod]
     public void AbsolutePcallResolvesStrictPathAndTransfersParametersWithoutExtern()
     {
         var directory = Path.Combine(Path.GetTempPath(), "lance-pcall-" + Guid.NewGuid());

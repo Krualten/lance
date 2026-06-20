@@ -45,9 +45,10 @@ public static class SinumerikProgramSearchPath
         if (normalizedExplicitDirectoryPath.Count > 0)
         {
             filteredCandidates = filteredCandidates.Where(candidate =>
-                DirectoryMatchesPath(
+                DirectoryMatchesProgramPath(
                     Path.GetDirectoryName(candidate.SourceDocument.LocalPath) ?? string.Empty,
-                    normalizedExplicitDirectoryPath));
+                    normalizedExplicitDirectoryPath,
+                    manufacturerDirectories));
         }
 
         if (!string.IsNullOrEmpty(explicitFileExtension))
@@ -90,7 +91,10 @@ public static class SinumerikProgramSearchPath
         }
 
         var candidateDirectory = Path.GetDirectoryName(candidate.SourceDocument.LocalPath) ?? string.Empty;
-        if (DirectoryMatchesPath(candidateDirectory, normalizedExplicitDirectoryPath))
+        if (DirectoryMatchesProgramPath(
+                candidateDirectory,
+                normalizedExplicitDirectoryPath,
+                manufacturerDirectories))
         {
             return ExplicitDirectoryRank;
         }
@@ -100,7 +104,7 @@ public static class SinumerikProgramSearchPath
             return CurrentDirectoryRank;
         }
 
-        if (DirectoryMatchesPath(candidateDirectory, normalizedCallPath))
+        if (DirectoryMatchesProgramPath(candidateDirectory, normalizedCallPath, manufacturerDirectories))
         {
             return CallPathDirectoryRank;
         }
@@ -202,5 +206,31 @@ public static class SinumerikProgramSearchPath
         }
 
         return true;
+    }
+
+    private static bool DirectoryMatchesProgramPath(
+        string candidateDirectory,
+        IReadOnlyList<string> normalizedProgramPath,
+        ISet<string> manufacturerDirectories)
+    {
+        if (DirectoryMatchesPath(candidateDirectory, normalizedProgramPath))
+        {
+            return true;
+        }
+
+        if (normalizedProgramPath.Count != 1)
+        {
+            return false;
+        }
+
+        var requestedRoot = normalizedProgramPath[0];
+        if (!StandardCycleDirectories.Contains(requestedRoot)
+            && !manufacturerDirectories.Contains(requestedRoot))
+        {
+            return false;
+        }
+
+        return NormalizeProgramDirectoryPath(candidateDirectory)
+            .Contains(requestedRoot, StringComparer.OrdinalIgnoreCase);
     }
 }

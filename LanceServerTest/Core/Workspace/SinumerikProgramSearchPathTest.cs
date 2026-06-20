@@ -132,6 +132,31 @@ public class SinumerikProgramSearchPathTest
     }
 
     [TestMethod]
+    public void ExplicitCycleRootIncludesDevelopmentSubdirectories()
+    {
+        var reference = CreateUri("NC", "CMA.DIR", "BOOT", "MAIN.SPF");
+        var candidates = new[]
+        {
+            CreateProcedure("NC", "OTHER.DIR", "HELPER.SPF"),
+            CreateProcedure("NC", "CMA.DIR", "GENERIC", "HELPER.SPF")
+        };
+
+        var orderedPaths = SinumerikProgramSearchPath
+            .OrderCandidates(
+                candidates,
+                reference,
+                Array.Empty<string>(),
+                explicitDirectoryPath: "/_N_CMA_DIR",
+                explicitFileExtension: ".spf")
+            .Select(symbol => symbol.SourceDocument.LocalPath)
+            .ToList();
+
+        CollectionAssert.AreEqual(
+            new[] { CreatePath("NC", "CMA.DIR", "GENERIC", "HELPER.SPF") },
+            orderedPaths);
+    }
+
+    [TestMethod]
     public void MissingExplicitProgramDirectoryDoesNotFallBackToHomonym()
     {
         var reference = CreateUri("NC", "WKS.DIR", "PART.WPD", "MAIN.MPF");
