@@ -813,6 +813,71 @@ END_SECTION:";
     }
 
     [TestMethod]
+    public void NumberedProcedureDefinitionSupportsPreprocessingAttribute()
+    {
+        var code =
+            @"PROC L601 PREPRO
+M17
+";
+        var preprocessedDocument = new PreprocessedDocument(
+            new DocumentInformationMock(new Uri("file:///L601.SPF"), ".spf", DocumentType.CycleSubProcedure),
+            code,
+            code,
+            new PlaceholderTable(new Dictionary<string, string>()),
+            "");
+        var parserManager = new ParserManager();
+        var parserResult = parserManager.Parse(preprocessedDocument);
+        var parsedDocument = new ParsedDocument(
+            preprocessedDocument,
+            parserResult.ParseTree,
+            parserResult.Diagnostics);
+        var symbols = parserManager.GetSymbolTableForDocument(parsedDocument);
+        var symbolisedDocument = new SymbolisedDocument(parsedDocument, new SymbolTable());
+        var symbolUses = parserManager.GetSymbolUseForDocument(symbolisedDocument);
+
+        Assert.AreEqual(
+            0,
+            parserResult.Diagnostics.Count,
+            string.Join(Environment.NewLine, parserResult.Diagnostics.Select(diagnostic => diagnostic.Message)));
+        Assert.AreEqual("L601", symbols.OfType<ProcedureSymbol>().Single().Identifier);
+        Assert.AreEqual(0, symbolUses.OfType<ProcedureUse>().Count());
+    }
+
+    [TestMethod]
+    public void ProcedureDefinitionSupportsManufacturerRuntimeAttributes()
+    {
+        var code =
+            @"PROC TOOL_MONITORING(AXIS loadAxis, REAL maxLoad) IPTRLOCK SBLOF DISPLOF ICYCOF
+M17
+";
+        var preprocessedDocument = new PreprocessedDocument(
+            new DocumentInformationMock(
+                new Uri("file:///TOOL_MONITORING.SPF"),
+                ".spf",
+                DocumentType.CycleSubProcedure),
+            code,
+            code,
+            new PlaceholderTable(new Dictionary<string, string>()),
+            "");
+        var parserManager = new ParserManager();
+        var parserResult = parserManager.Parse(preprocessedDocument);
+        var parsedDocument = new ParsedDocument(
+            preprocessedDocument,
+            parserResult.ParseTree,
+            parserResult.Diagnostics);
+        var procedure = parserManager.GetSymbolTableForDocument(parsedDocument)
+            .OfType<ProcedureSymbol>()
+            .Single();
+
+        Assert.AreEqual(
+            0,
+            parserResult.Diagnostics.Count,
+            string.Join(Environment.NewLine, parserResult.Diagnostics.Select(diagnostic => diagnostic.Message)));
+        Assert.AreEqual("TOOL_MONITORING", procedure.Identifier);
+        Assert.AreEqual(2, procedure.Parameters.Length);
+    }
+
+    [TestMethod]
     public void OperateGroupMetadataDoesNotInterruptNcParsingOrCreateSymbolUses()
     {
         var code =

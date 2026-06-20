@@ -132,6 +132,11 @@ public class SymbolUseListener : SinumerikNCBaseListener
     {
         if (IsOperateGroupMetadata) return;
 
+        if (context.Parent is SinumerikNCParser.ProcedureDefinitionHeaderContext)
+        {
+            return;
+        }
+
         var identifier = context.GetText();
         SymbolUseTable.Add(new ProcedureUse(
             identifier,

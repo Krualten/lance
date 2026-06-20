@@ -98,12 +98,16 @@ public class SymbolListener : SinumerikNCBaseListener
         if (context.exception != null) return;
 
         var name = context.NAME();
-        if (name == null) return;
+        var numberedName = context.numberedProcedure();
+        if (name == null && numberedName == null) return;
 
-        var identifier = ReplacePlaceholder(name.GetText());
+        var identifierContext = (Antlr4.Runtime.ParserRuleContext?)numberedName;
+        var identifier = ReplacePlaceholder(name?.GetText() ?? numberedName!.GetText());
         var uri = _document.Information.Uri;
         var symbolRange = ParserHelper.GetRangeFromStartToEndToken(context.Start, context.Stop);
-        var identifierRange = ParserHelper.GetRangeForToken(name.Symbol);
+        var identifierRange = name != null
+            ? ParserHelper.GetRangeForToken(name.Symbol)
+            : ParserHelper.GetRangeFromStartToEndToken(identifierContext!.Start, identifierContext.Stop);
         
         if (identifier.Length < 2)
         {

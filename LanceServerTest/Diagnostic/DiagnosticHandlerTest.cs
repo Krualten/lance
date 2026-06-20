@@ -756,6 +756,46 @@ ENDPROC
         }
     }
 
+    [TestMethod]
+    public void NumberedLProcedureCallResolvesNumberedProcedureDefinition()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "lance-numbered-procedure-" + Guid.NewGuid());
+        Directory.CreateDirectory(directory);
+        var helperPath = Path.Combine(directory, "L601.SPF");
+        var mainPath = Path.Combine(directory, "TEST_MAIN.MPF");
+        File.WriteAllText(
+            helperPath,
+            @"PROC L601 PREPRO
+M17
+");
+        File.WriteAllText(
+            mainPath,
+            @"PROC TEST_MAIN()
+L601
+M30
+");
+
+        try
+        {
+            var configurationManager = CreateConfigurationManager();
+            var workspace = new Workspace(
+                new ParserManager(),
+                new PlaceholderPreprocessor(configurationManager),
+                configurationManager);
+            workspace.GetSymbolisedDocument(new Uri(helperPath));
+            var mainDocument = workspace.GetSymbolUseExtractedDocument(new Uri(mainPath));
+
+            var diagnostics = new DiagnosticHandler().HandleRequest(mainDocument, workspace).Items;
+
+            Assert.IsFalse(diagnostics.Any(diagnostic =>
+                diagnostic.Message.Equals("Cannot resolve symbol L601.", StringComparison.Ordinal)));
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
     [DataTestMethod]
     [DataRow("cus.dir")]
     [DataRow("cma.dir")]

@@ -922,8 +922,8 @@ labelDefinition: (NAME | LABEL_END) DOUBLE_COLON;
 // A PROC header declares the program interface. ENDPROC may be present, but
 // manufacturer cycles are also valid when the program body simply reaches EOF.
 procedureDefinition: procedureDefinitionHeader NEWLINE+ content PROC_END? NEWLINE*;
-procedureDefinitionHeader: PROC NAME parameterDefinitions? procedureModifier*;
-procedureModifier: SBLOF | DISPLON | DISPLOF | ACTBLOCNO | SAVE;
+procedureDefinitionHeader: PROC (NAME | numberedProcedure) parameterDefinitions? procedureModifier*;
+procedureModifier: SBLOF | DISPLON | DISPLOF | ACTBLOCNO | SAVE | PREPRO | IPTRLOCK | ICYCOF | ICYCON;
 
 parameterDefinitions: OPEN_PAREN (parameterDefinition (COMMA parameterDefinition)*)? CLOSE_PAREN;
 parameterDefinition: parameterDefinitionByValue | parameterDefinitionByReference;
