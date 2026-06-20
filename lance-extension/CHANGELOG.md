@@ -59,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - accepted `POLF[axis]=position` and `LFPOS` together in the same NC block for rapid retraction configuration.
 - resolved explicit calls to `CMA`, `CUS`, `CST` or configured manufacturer-cycle roots when development projects organize those cycles in nested subdirectories.
 - distinguished conditional `IF ... GOTO` jumps from structured `IF ... ENDIF` blocks, including dynamically generated `EXECSTRING` conditions, accepted multiple conditional jumps in one NC block and reported provably unmatched delimiters without parser cascades.
+- treated freely configured direct axis names as machine axes when combined with indirect `AX[...]` addressing in the same NC block.
 
 ## [1.0.1] - 2023-06-03
 

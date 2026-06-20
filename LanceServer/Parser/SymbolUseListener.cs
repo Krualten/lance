@@ -80,7 +80,7 @@ public class SymbolUseListener : SinumerikNCBaseListener
 
         AddIdentifierIfNotPlaceholder(
             context.userVariableIdentifier(),
-            canBeMachineAxis: IsSystemVariableIndex(context));
+            canBeMachineAxis: IsSystemVariableIndex(context) || IsDirectAxisAddress(context));
     }
 
     /// <summary>
@@ -596,6 +596,12 @@ public class SymbolUseListener : SinumerikNCBaseListener
         }
 
         return false;
+    }
+
+    private static bool IsDirectAxisAddress(ParserRuleContext context)
+    {
+        var axisCode = FindAncestor<SinumerikNCParser.AxisCodeContext>(context);
+        return axisCode != null && IsWithin(context, axisCode.expression());
     }
 
     private static TContext? FindAncestor<TContext>(ParserRuleContext context)

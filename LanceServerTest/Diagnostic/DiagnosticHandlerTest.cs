@@ -1060,6 +1060,7 @@ ENDPROC
             @"PROC TEST_MAIN()
 DEF REAL limit
 PF=-215
+RAM_AXIS=-100 AX[configuredAxis]=50
 limit=$MA_POS_LIMIT_PLUS[PF]
 RET
 ENDPROC
@@ -1083,6 +1084,9 @@ ENDPROC
             Assert.IsFalse(
                 diagnostics.Any(diagnostic =>
                     diagnostic.Message.Equals("Cannot resolve symbol PF.", StringComparison.Ordinal)));
+            Assert.IsFalse(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.Equals("Cannot resolve symbol RAM_AXIS.", StringComparison.Ordinal)));
         }
         finally
         {
