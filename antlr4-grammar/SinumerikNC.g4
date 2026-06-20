@@ -1299,6 +1299,7 @@ command
     | POLY arguments?
     | PON arguments?
     | PONS arguments?
+    | POLF OPEN_BRACKET expression CLOSE_BRACKET ASSIGNMENT axisAssignmentExpression
     | POS OPEN_BRACKET expression CLOSE_BRACKET ASSIGNMENT axisAssignmentExpression
     | POSA OPEN_BRACKET expression CLOSE_BRACKET ASSIGNMENT axisAssignmentExpression
     | POSM
@@ -1822,7 +1823,6 @@ keyword
     | PHU
     | PM
     | PO
-    | POLF OPEN_BRACKET expression CLOSE_BRACKET ASSIGNMENT axisAssignmentExpression
     | PR
     | PRLOC
     | PSISYNRW

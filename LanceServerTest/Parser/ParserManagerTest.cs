@@ -877,6 +877,28 @@ M17
         Assert.AreEqual(2, procedure.Parameters.Length);
     }
 
+    [DataTestMethod]
+    [DataRow("POLF[W]=0 LFPOS")]
+    [DataRow("LFPOS POLF[W]=0")]
+    public void FastRetractionPositionCanShareBlockWithLfpos(string code)
+    {
+        var preprocessedDocument = new PreprocessedDocument(
+            new DocumentInformationMock(
+                new Uri("file:///FAST_RETRACTION.SPF"),
+                ".spf",
+                DocumentType.CycleSubProcedure),
+            code,
+            code,
+            new PlaceholderTable(new Dictionary<string, string>()),
+            "");
+        var parserResult = new ParserManager().Parse(preprocessedDocument);
+
+        Assert.AreEqual(
+            0,
+            parserResult.Diagnostics.Count,
+            string.Join(Environment.NewLine, parserResult.Diagnostics.Select(diagnostic => diagnostic.Message)));
+    }
+
     [TestMethod]
     public void OperateGroupMetadataDoesNotInterruptNcParsingOrCreateSymbolUses()
     {
