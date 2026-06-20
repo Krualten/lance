@@ -14,10 +14,26 @@ public class ErrorListener : BaseErrorListener, IAntlrErrorListener<int>
     /// The diagnostics generated while parsing.
     /// </summary>
     public IList<Diagnostic> Diagnostics = new List<Diagnostic>();
+
+    private IfStructureValidationResult? _ifStructureValidation;
+
+    internal void SetIfStructureValidation(IfStructureValidationResult validation)
+    {
+        _ifStructureValidation = validation;
+        foreach (var diagnostic in validation.Diagnostics)
+        {
+            Diagnostics.Add(diagnostic);
+        }
+    }
     
     /// <inheritdoc />
     public override void SyntaxError(TextWriter output, IRecognizer recognizer, IToken offendingSymbol, int line, int charPositionInLine, string msg, RecognitionException e)
     {
+        if (_ifStructureValidation?.SupersedesParserError(offendingSymbol, msg) == true)
+        {
+            return;
+        }
+
         Diagnostics.Add(DiagnosticMessage.ParsingError(ParserHelper.GetRangeForToken(offendingSymbol), msg));
     }
 

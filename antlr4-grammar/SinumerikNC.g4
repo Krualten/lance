@@ -1004,7 +1004,11 @@ statement
 // remain parseable while editing.
 operateGroupDirective: (GROUP_BEGIN | GROUP_END | GROUP_ADDEND) arguments?;
 
-ifStatement: IF expression (NEWLINE* scope ifStatementElse? lineStart? IF_END | gotoStatement);
+ifStatement
+    : IF expression (
+        NEWLINE* scope ifStatementElse? lineStart? IF_END
+        | gotoStatement (IF expression gotoStatement)*
+    );
 ifStatementElse: lineStart? ELSE NEWLINE* scope;
 
 caseStatement: CASE expression CASE_OF NEWLINE* (lineStart? primaryExpression gotoStatement NEWLINE*)+ (lineStart? CASE_DEFAULT gotoStatement)?;

@@ -19,7 +19,10 @@ public class ParserManager : IParserManager
         }
 
         var errorListener = new ErrorListener();
-        var parser = new SinumerikNCParser(Tokenize(document, errorListener));
+        var tokenStream = Tokenize(document, errorListener);
+        var ifStructureValidation = IfStructureValidator.Validate(tokenStream);
+        errorListener.SetIfStructureValidation(ifStructureValidation);
+        var parser = new SinumerikNCParser(tokenStream);
         parser.RemoveErrorListeners();
         parser.AddErrorListener(errorListener);
         IParseTree tree = parser.file();

@@ -123,6 +123,18 @@ public static class DiagnosticMessage
         };
     }
 
+    public static LspTypes.Diagnostic UnexpectedEndIf(Range range)
+    {
+        return ParsingError(
+            range,
+            "No structured IF block remains open at this ENDIF. Conditional IF ... GOTO statements do not open a block.");
+    }
+
+    public static LspTypes.Diagnostic MissingEndIf(Range range)
+    {
+        return ParsingError(range, "Structured IF block has no matching ENDIF.");
+    }
+
     public static LspTypes.Diagnostic LexingError(Range range, string token)
     {
         return new LspTypes.Diagnostic

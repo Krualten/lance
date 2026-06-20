@@ -203,6 +203,116 @@ public class ParserManagerTest
         Assert.AreEqual("definedVariable", actualSymbols[symbolPosition].Identifier);
     }
 
+    [DataTestMethod]
+    [DataRow("IF value GOTOF TARGET\nTARGET:\nM17\n")]
+    [DataRow("IF value GOTOB TARGET\nTARGET:\nM17\n")]
+    [DataRow("IF firstValue GOTOB FIRST IF secondValue GOTOF SECOND\nFIRST:\nSECOND:\nM17\n")]
+    [DataRow("IF outerValue\nIF innerValue GOTOF TARGET\nENDIF\nTARGET:\nM17\n")]
+    public void ConditionalJumpsDoNotRequireEndIf(string code)
+    {
+        var parserResult = ParseCode(code);
+
+        Assert.AreEqual(
+            0,
+            parserResult.Diagnostics.Count,
+            string.Join(Environment.NewLine, parserResult.Diagnostics.Select(diagnostic => diagnostic.Message)));
+    }
+
+    [TestMethod]
+    public void EndIfAfterConditionalJumpReportsOnePreciseDiagnostic()
+    {
+        var parserResult = ParseCode(
+            @"IF value GOTOF TARGET
+ENDIF
+TARGET:
+M17
+");
+
+        Assert.AreEqual(1, parserResult.Diagnostics.Count);
+        Assert.AreEqual(
+            "No structured IF block remains open at this ENDIF. Conditional IF ... GOTO statements do not open a block.",
+            parserResult.Diagnostics.Single().Message);
+        Assert.AreEqual(1u, parserResult.Diagnostics.Single().Range.Start.Line);
+    }
+
+    [TestMethod]
+    public void MissingEndIfReportsOpeningIfWithoutParserCascade()
+    {
+        var parserResult = ParseCode(
+            @"IF outerValue
+IF jumpValue GOTOF TARGET
+TARGET:
+M17
+");
+
+        Assert.AreEqual(1, parserResult.Diagnostics.Count);
+        Assert.AreEqual(
+            "Structured IF block has no matching ENDIF.",
+            parserResult.Diagnostics.Single().Message);
+        Assert.AreEqual(0u, parserResult.Diagnostics.Single().Range.Start.Line);
+    }
+
+    [TestMethod]
+    public void NestedStructuredIfBlocksRemainValid()
+    {
+        var parserResult = ParseCode(
+            @"IF outerValue
+IF innerValue
+M17
+ENDIF
+ENDIF
+");
+
+        Assert.AreEqual(
+            0,
+            parserResult.Diagnostics.Count,
+            string.Join(Environment.NewLine, parserResult.Diagnostics.Select(diagnostic => diagnostic.Message)));
+    }
+
+    [DataTestMethod]
+    [DataRow(
+        "EXECSTRING(\"IF \"<<conditionName)\nM17\nENDIF\n")]
+    [DataRow(
+        "EXECSTRING(\"IF \"<<conditionName)\nM17\nELSE\nM30\nENDIF\n")]
+    public void DynamicallyGeneratedStructuredIfCanUseVisibleDelimiters(string code)
+    {
+        var parserResult = ParseCode(code);
+
+        Assert.AreEqual(
+            0,
+            parserResult.Diagnostics.Count,
+            string.Join(Environment.NewLine, parserResult.Diagnostics.Select(diagnostic => diagnostic.Message)));
+    }
+
+    [TestMethod]
+    public void DynamicallyGeneratedConditionalJumpDoesNotRequireEndIf()
+    {
+        var parserResult = ParseCode(
+            @"EXECSTRING(""IF ""<<conditionName<<"" GOTOF TARGET"")
+TARGET:
+M17
+");
+
+        Assert.AreEqual(
+            0,
+            parserResult.Diagnostics.Count,
+            string.Join(Environment.NewLine, parserResult.Diagnostics.Select(diagnostic => diagnostic.Message)));
+    }
+
+    [TestMethod]
+    public void UnclosedDynamicIfIsNotReportedWhenItsGeneratedTailIsUnknown()
+    {
+        var parserResult = ParseCode(
+            @"EXECSTRING(""IF ""<<dynamicCondition)
+M17
+");
+
+        Assert.AreEqual(
+            0,
+            parserResult.Diagnostics.Count,
+            string.Join(Environment.NewLine, parserResult.Diagnostics.Select(diagnostic => diagnostic.Message)));
+    }
+
     [TestMethod]
     public void LiteralCallPathIsAttachedToFollowingProcedureUsesUntilReset()
     {
@@ -897,6 +1007,21 @@ M17
             0,
             parserResult.Diagnostics.Count,
             string.Join(Environment.NewLine, parserResult.Diagnostics.Select(diagnostic => diagnostic.Message)));
+    }
+
+    private static ParserResult ParseCode(string code)
+    {
+        var preprocessedDocument = new PreprocessedDocument(
+            new DocumentInformationMock(
+                new Uri("file:///CONTROL_FLOW.SPF"),
+                ".spf",
+                DocumentType.CycleSubProcedure),
+            code,
+            code,
+            new PlaceholderTable(new Dictionary<string, string>()),
+            "");
+
+        return new ParserManager().Parse(preprocessedDocument);
     }
 
     [TestMethod]
