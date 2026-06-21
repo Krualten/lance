@@ -1094,6 +1094,181 @@ ENDPROC
         }
     }
 
+    [TestMethod]
+    public void OrdinaryAssignmentDoesNotMakeUndeclaredVariableAMachineAxis()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "lance-variable-assignment-" + Guid.NewGuid());
+        Directory.CreateDirectory(directory);
+        var mainPath = Path.Combine(directory, "TEST_MAIN.MPF");
+        File.WriteAllText(
+            mainPath,
+            @"PROC TEST_MAIN()
+DEF BOOL enabled
+HMI_DIALOG_ACK=0
+IF enabled
+    IF HMI_DIALOG_ACK==1
+        HMI_DIALOG_ACK=0
+        GOTOF DONE
+    ENDIF
+ENDIF
+DONE:
+RET
+ENDPROC
+");
+
+        try
+        {
+            var configurationManager = CreateConfigurationManager();
+            var workspace = new Workspace(
+                new ParserManager(),
+                new PlaceholderPreprocessor(configurationManager),
+                configurationManager);
+            var mainDocument = workspace.GetSymbolUseExtractedDocument(new Uri(mainPath));
+
+            var diagnostics = new DiagnosticHandler().HandleRequest(mainDocument, workspace).Items;
+
+            Assert.AreEqual(
+                0,
+                mainDocument.ParserDiagnostics.Count,
+                string.Join(Environment.NewLine, mainDocument.ParserDiagnostics.Select(diagnostic => diagnostic.Message)));
+            Assert.IsTrue(
+                diagnostics.Any(diagnostic =>
+                    diagnostic.Message.Equals(
+                        "Cannot resolve symbol HMI_DIALOG_ACK.",
+                        StringComparison.Ordinal)));
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [TestMethod]
+    public void ExactIsVarGuardAllowsOptionalVariableOnlyInsideTrueBranch()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "lance-isvar-" + Guid.NewGuid());
+        Directory.CreateDirectory(directory);
+        var mainPath = Path.Combine(directory, "TEST_MAIN.MPF");
+        File.WriteAllText(
+            mainPath,
+            @"PROC TEST_MAIN()
+IF ISVAR(""OPTIONAL_FLAG"")
+    OPTIONAL_FLAG=1
+ENDIF
+IF (ISVAR(""PAREN_FLAG""))
+    PAREN_FLAG=1
+ENDIF
+IF ISVAR(""OTHER_FLAG"")
+    WRONG_FLAG=1
+ENDIF
+IF NOT ISVAR(""NEGATED_FLAG"")
+    NEGATED_FLAG=1
+ENDIF
+IF ISVAR(""ELSE_FLAG"")
+    MSG(""available"")
+ELSE
+    ELSE_FLAG=0
+ENDIF
+OPTIONAL_FLAG=0
+RET
+ENDPROC
+");
+
+        try
+        {
+            var configurationManager = CreateConfigurationManager();
+            var workspace = new Workspace(
+                new ParserManager(),
+                new PlaceholderPreprocessor(configurationManager),
+                configurationManager);
+            var mainDocument = workspace.GetSymbolUseExtractedDocument(new Uri(mainPath));
+
+            var unresolvedDiagnostics = new DiagnosticHandler()
+                .HandleRequest(mainDocument, workspace)
+                .Items
+                .Where(diagnostic =>
+                    diagnostic.Message.StartsWith("Cannot resolve symbol ", StringComparison.Ordinal))
+                .Select(diagnostic => diagnostic.Message)
+                .ToArray();
+
+            Assert.AreEqual(
+                0,
+                mainDocument.ParserDiagnostics.Count,
+                string.Join(Environment.NewLine, mainDocument.ParserDiagnostics.Select(diagnostic => diagnostic.Message)));
+            Assert.AreEqual(
+                1,
+                unresolvedDiagnostics.Count(message =>
+                    message.Equals("Cannot resolve symbol OPTIONAL_FLAG.", StringComparison.Ordinal)));
+            CollectionAssert.DoesNotContain(unresolvedDiagnostics, "Cannot resolve symbol PAREN_FLAG.");
+            CollectionAssert.Contains(unresolvedDiagnostics, "Cannot resolve symbol WRONG_FLAG.");
+            CollectionAssert.Contains(unresolvedDiagnostics, "Cannot resolve symbol NEGATED_FLAG.");
+            CollectionAssert.Contains(unresolvedDiagnostics, "Cannot resolve symbol ELSE_FLAG.");
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [TestMethod]
+    public void SiemensAndBlumRuntimeSymbolsDoNotRequireWorkspaceDefinitions()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "lance-runtime-symbols-" + Guid.NewGuid());
+        Directory.CreateDirectory(directory);
+        var mainPath = Path.Combine(directory, "TEST_MAIN.MPF");
+        File.WriteAllText(
+            mainPath,
+            @"PROC TEST_MAIN()
+DEF INT result
+CYCLE976()
+cycle150()
+BL9903()
+bl9908()
+result=_B_ERRNO
+result=_b_ctool
+MC_ACZ()
+CYCLE_CUSTOM()
+BL_TOOL()
+RET
+ENDPROC
+");
+
+        try
+        {
+            var configurationManager = CreateConfigurationManager();
+            var workspace = new Workspace(
+                new ParserManager(),
+                new PlaceholderPreprocessor(configurationManager),
+                configurationManager);
+            var mainDocument = workspace.GetSymbolUseExtractedDocument(new Uri(mainPath));
+
+            var diagnostics = new DiagnosticHandler().HandleRequest(mainDocument, workspace).Items;
+            var unresolvedIdentifiers = diagnostics
+                .Where(diagnostic =>
+                    diagnostic.Message.StartsWith("Cannot resolve symbol ", StringComparison.Ordinal))
+                .Select(diagnostic => diagnostic.Message)
+                .ToArray();
+
+            Assert.AreEqual(
+                0,
+                mainDocument.ParserDiagnostics.Count,
+                string.Join(Environment.NewLine, mainDocument.ParserDiagnostics.Select(diagnostic => diagnostic.Message)));
+            CollectionAssert.DoesNotContain(unresolvedIdentifiers, "Cannot resolve symbol CYCLE976.");
+            CollectionAssert.DoesNotContain(unresolvedIdentifiers, "Cannot resolve symbol cycle150.");
+            CollectionAssert.DoesNotContain(unresolvedIdentifiers, "Cannot resolve symbol BL9903.");
+            CollectionAssert.DoesNotContain(unresolvedIdentifiers, "Cannot resolve symbol bl9908.");
+            CollectionAssert.DoesNotContain(unresolvedIdentifiers, "Cannot resolve symbol _B_ERRNO.");
+            CollectionAssert.DoesNotContain(unresolvedIdentifiers, "Cannot resolve symbol _b_ctool.");
+            CollectionAssert.Contains(unresolvedIdentifiers, "Cannot resolve symbol MC_ACZ.");
+            CollectionAssert.Contains(unresolvedIdentifiers, "Cannot resolve symbol CYCLE_CUSTOM.");
+            CollectionAssert.Contains(unresolvedIdentifiers, "Cannot resolve symbol BL_TOOL.");
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
     private static ConfigurationManager CreateConfigurationManager()
     {
         var configuration = new ServerConfiguration

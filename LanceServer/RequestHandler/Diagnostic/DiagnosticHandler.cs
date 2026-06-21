@@ -16,11 +16,17 @@ public class DiagnosticHandler : IDiagnosticHandler
         diagnostics.AddRange(document.ParserDiagnostics);
         
         var symbolUses = document.SymbolUseTable.GetAll();
-        var unresolvedMachineAxes = symbolUses
+        var unresolvedSymbolUses = symbolUses
             .OfType<SymbolUse>()
-            .Where(symbolUse => symbolUse.CanBeMachineAxis)
             .Where(symbolUse => !workspace.GetSymbols(symbolUse).Any())
-            .Select(symbolUse => symbolUse.Identifier)
+            .ToList();
+        var unresolvedMachineAxes = unresolvedSymbolUses
+            .GroupBy(symbolUse => symbolUse.Identifier, StringComparer.OrdinalIgnoreCase)
+            .Where(group => group.Any(symbolUse => symbolUse.CanBeMachineAxis)
+                            && group.All(symbolUse =>
+                                symbolUse.CanBeMachineAxis
+                                || symbolUse.IsMachineAxisAssignmentCandidate))
+            .Select(group => group.Key)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         foreach (var symbolUse in symbolUses)
@@ -78,7 +84,10 @@ public class DiagnosticHandler : IDiagnosticHandler
                     }
                 }
             }
-            else if (!unresolvedMachineAxes.Contains(symbolUse.Identifier))
+            else if (!unresolvedMachineAxes.Contains(symbolUse.Identifier)
+                     && (symbolUse is not SymbolUse unresolvedSymbolUse
+                         || !unresolvedSymbolUse.IsConditionallyAvailable)
+                     && !IsImplicitRuntimeSymbol(symbolUse.Identifier))
             {
                 diagnostics.Add(DiagnosticMessage.CannotResolveSymbol(symbolUse));
             }
@@ -125,6 +134,20 @@ public class DiagnosticHandler : IDiagnosticHandler
         }
         
         return new DocumentDiagnosticReport { Items = diagnostics.ToArray() };
+    }
+
+    private static bool IsImplicitRuntimeSymbol(string identifier)
+    {
+        return HasNumericSuffix(identifier, "CYCLE")
+               || HasNumericSuffix(identifier, "BL")
+               || identifier.StartsWith("_B_", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool HasNumericSuffix(string identifier, string prefix)
+    {
+        return identifier.Length > prefix.Length
+               && identifier.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+               && identifier.Skip(prefix.Length).All(character => character is >= '0' and <= '9');
     }
 
     private static DataType? ResolveArgumentType(

@@ -18,6 +18,9 @@ public class SymbolUseListener : SinumerikNCBaseListener
     private readonly PlaceholderPreprocessedDocument _document;
     private string? _activeCallPath;
     private int _operateGroupDirectiveDepth;
+    private readonly Stack<string?> _conditionalAvailabilityScopes = new();
+    private readonly Dictionary<string, int> _conditionallyAvailableIdentifiers =
+        new(StringComparer.OrdinalIgnoreCase);
     
     public SymbolUseListener(SymbolisedDocument document)
     {
@@ -33,6 +36,41 @@ public class SymbolUseListener : SinumerikNCBaseListener
     {
         _operateGroupDirectiveDepth--;
     }
+
+    public override void EnterScope(SinumerikNCParser.ScopeContext context)
+    {
+        var identifier = context.Parent is SinumerikNCParser.IfStatementContext ifStatement
+            ? GetExactIsVarGuardIdentifier(ifStatement.expression(0))
+            : null;
+
+        _conditionalAvailabilityScopes.Push(identifier);
+        if (identifier == null)
+        {
+            return;
+        }
+
+        _conditionallyAvailableIdentifiers.TryGetValue(identifier, out var count);
+        _conditionallyAvailableIdentifiers[identifier] = count + 1;
+    }
+
+    public override void ExitScope(SinumerikNCParser.ScopeContext context)
+    {
+        var identifier = _conditionalAvailabilityScopes.Pop();
+        if (identifier == null)
+        {
+            return;
+        }
+
+        var count = _conditionallyAvailableIdentifiers[identifier] - 1;
+        if (count == 0)
+        {
+            _conditionallyAvailableIdentifiers.Remove(identifier);
+        }
+        else
+        {
+            _conditionallyAvailableIdentifiers[identifier] = count;
+        }
+    }
     
     /// <summary>
     /// Is called at the end of a user variable assignment.
@@ -41,7 +79,9 @@ public class SymbolUseListener : SinumerikNCBaseListener
     public override void ExitUserVariableAssignment(SinumerikNCParser.UserVariableAssignmentContext context)
     {
         if (IsOperateGroupMetadata) return;
-        AddIdentifierIfNotPlaceholder(context.userVariableIdentifier(), canBeMachineAxis: true);
+        AddIdentifierIfNotPlaceholder(
+            context.userVariableIdentifier(),
+            isMachineAxisAssignmentCandidate: true);
     }
 
     /// <summary>
@@ -52,7 +92,9 @@ public class SymbolUseListener : SinumerikNCBaseListener
         SinumerikNCParser.IncompleteUserVariableAssignmentContext context)
     {
         if (IsOperateGroupMetadata || context.ASSIGNMENT()?.Symbol.TokenIndex < 0) return;
-        AddIdentifierIfNotPlaceholder(context.userVariableIdentifier(), canBeMachineAxis: true);
+        AddIdentifierIfNotPlaceholder(
+            context.userVariableIdentifier(),
+            isMachineAxisAssignmentCandidate: true);
     }
 
     /// <summary>
@@ -604,6 +646,33 @@ public class SymbolUseListener : SinumerikNCBaseListener
         return axisCode != null && IsWithin(context, axisCode.expression());
     }
 
+    private static string? GetExactIsVarGuardIdentifier(
+        SinumerikNCParser.ExpressionContext? expression)
+    {
+        if (expression == null)
+        {
+            return null;
+        }
+
+        var text = expression.GetText();
+        while (text.Length >= 2 && text[0] == '(' && text[^1] == ')')
+        {
+            text = text[1..^1];
+        }
+
+        const string Prefix = "ISVAR(\"";
+        const string Suffix = "\")";
+        if (!text.StartsWith(Prefix, StringComparison.OrdinalIgnoreCase)
+            || !text.EndsWith(Suffix, StringComparison.Ordinal)
+            || text.Length <= Prefix.Length + Suffix.Length)
+        {
+            return null;
+        }
+
+        var identifier = text[Prefix.Length..^Suffix.Length];
+        return identifier.Contains('"') ? null : identifier;
+    }
+
     private static TContext? FindAncestor<TContext>(ParserRuleContext context)
         where TContext : ParserRuleContext
     {
@@ -626,7 +695,10 @@ public class SymbolUseListener : SinumerikNCBaseListener
             && context.Stop.TokenIndex <= possibleAncestor.Stop.TokenIndex;
     }
 
-    private void AddTokenIfNotPlaceholder(IToken token, bool canBeMachineAxis = false)
+    private void AddTokenIfNotPlaceholder(
+        IToken token,
+        bool canBeMachineAxis = false,
+        bool isMachineAxisAssignmentCandidate = false)
     {
         if (IsSyntheticToken(token) || _document.PlaceholderTable.ContainedPlaceholder(token.Text))
         {
@@ -637,7 +709,9 @@ public class SymbolUseListener : SinumerikNCBaseListener
             token.Text,
             ParserHelper.GetRangeForToken(token),
             _document.Information.Uri,
-            canBeMachineAxis));
+            canBeMachineAxis,
+            isMachineAxisAssignmentCandidate,
+            _conditionallyAvailableIdentifiers.ContainsKey(token.Text)));
     }
 
     private static bool IsSyntheticToken(IToken token)
@@ -658,14 +732,18 @@ public class SymbolUseListener : SinumerikNCBaseListener
 
     private void AddIdentifierIfNotPlaceholder(
         ParserRuleContext? identifier,
-        bool canBeMachineAxis = false)
+        bool canBeMachineAxis = false,
+        bool isMachineAxisAssignmentCandidate = false)
     {
         if (identifier == null)
         {
             return;
         }
 
-        AddTokenIfNotPlaceholder(identifier.Start, canBeMachineAxis);
+        AddTokenIfNotPlaceholder(
+            identifier.Start,
+            canBeMachineAxis,
+            isMachineAxisAssignmentCandidate);
     }
 
     private static bool TryGetStringLiteral(ParserRuleContext context, out string value)
