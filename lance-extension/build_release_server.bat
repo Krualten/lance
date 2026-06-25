@@ -1,8 +1,11 @@
-pushd ..\LanceServer\
-dotnet clean -c release
-dotnet build -c release
+@echo off
+setlocal
+set "DOTNET=dotnet"
+if exist "%USERPROFILE%\.dotnet10\dotnet.exe" set "DOTNET=%USERPROFILE%\.dotnet10\dotnet.exe"
+
+pushd ..
+"%DOTNET%" publish LanceServer\LanceServer.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o lance-extension\server\win-x64
 popd
-xcopy ..\LanceServer\bin\Release\net6.0 server\net6.0\ /s /y
-cd server\net6.0
-del config.json
-del preprocessor_config.json
+
+if exist server\win-x64\config.json del server\win-x64\config.json
+if exist server\win-x64\preprocessor_config.json del server\win-x64\preprocessor_config.json

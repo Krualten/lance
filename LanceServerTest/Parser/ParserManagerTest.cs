@@ -203,7 +203,7 @@ public class ParserManagerTest
         Assert.AreEqual("definedVariable", actualSymbols[symbolPosition].Identifier);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("IF value GOTOF TARGET\nTARGET:\nM17\n")]
     [DataRow("IF value GOTOB TARGET\nTARGET:\nM17\n")]
     [DataRow("IF firstValue GOTOB FIRST IF secondValue GOTOF SECOND\nFIRST:\nSECOND:\nM17\n")]
@@ -269,7 +269,7 @@ ENDIF
             string.Join(Environment.NewLine, parserResult.Diagnostics.Select(diagnostic => diagnostic.Message)));
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(
         "EXECSTRING(\"IF \"<<conditionName)\nM17\nENDIF\n")]
     [DataRow(
@@ -494,7 +494,7 @@ PCALL/_N_WKS_DIR/_N_LIBRARY_WPD/_N_TEST_HELPER_SPF(mainAxis)
             arguments.Select(argument => argument.IsWritableReference).ToArray());
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("TEST_HELPER(firstValue,,thirdValue,)")]
     [DataRow("MCALL TEST_HELPER(firstValue,,thirdValue,)")]
     [DataRow("PCALL/_N_WKS_DIR/_N_LIBRARY_WPD/TEST_HELPER(firstValue,,thirdValue,)")]
@@ -804,7 +804,7 @@ PCALL/_N_WKS_DIR/_N_LIBRARY_WPD/_N_TEST_HELPER_SPF(mainAxis)
                 StringComparison.Ordinal)));
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(
         @"[HEADER]
 FILE_TYPE = VCS
@@ -987,7 +987,7 @@ M17
         Assert.AreEqual(2, procedure.Parameters.Length);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("POLF[W]=0 LFPOS")]
     [DataRow("LFPOS POLF[W]=0")]
     public void FastRetractionPositionCanShareBlockWithLfpos(string code)

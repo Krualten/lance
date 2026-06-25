@@ -1,5 +1,4 @@
 ﻿using System.CommandLine;
-using System.Reflection;
 using LanceServer.Core.Configuration;
 using LanceServer.Core.Configuration.DataModel;
 using LanceServer.Core.Stream;
@@ -97,8 +96,7 @@ internal static class Program
 
     private static FileInfo GetDefaultConfig()
     {
-        var basePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        var defaultConfigPath = Path.Join(basePath, "config.json");
+        var defaultConfigPath = Path.Join(AppContext.BaseDirectory, "config.json");
         return new FileInfo(defaultConfigPath);
     }
 
@@ -110,7 +108,7 @@ internal static class Program
         var rpcMessageHandler = new HeaderDelimitedMessageHandler(sendingStream, receivingStream, formatter);
         var jsonRpc = new JsonRpc(rpcMessageHandler);
 
-        var docConfig = Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "language_token_documentation.json");
+        var docConfig = Path.Join(AppContext.BaseDirectory, "language_token_documentation.json");
         var documentation = JsonConvert.DeserializeObject<DocumentationConfiguration>(FileUtil.ReadFileContent(docConfig)) 
                             ?? throw new FileNotFoundException(docConfig + " not found");
         var config = new ConfigurationManager(documentation);
@@ -144,8 +142,7 @@ internal static class Program
             return;
         }
 
-        var basePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        var docConfigPath = Path.Join(basePath, "language_token_documentation.json");
+        var docConfigPath = Path.Join(AppContext.BaseDirectory, "language_token_documentation.json");
         var docConfig = JsonConvert.DeserializeObject<DocumentationConfiguration>(FileUtil.ReadFileContent(docConfigPath)) 
                         ?? throw new FileNotFoundException(docConfigPath + " not found");
         var serverConfigPath = configFileInfo.FullName;

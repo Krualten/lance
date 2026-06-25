@@ -7,7 +7,7 @@ namespace LanceServerTest.Core.Workspace;
 [TestClass]
 public class DocumentInformationTest
 {
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("cus.dir")]
     [DataRow("cma.dir")]
     [DataRow("cst.dir")]

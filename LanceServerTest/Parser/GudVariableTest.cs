@@ -81,7 +81,7 @@ public class GudVariableTest
         }
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("DEF NCK REAL PHU 2 GD_ATC_Height_Clearance")]
     [DataRow("DEF NCK APWP 1 APRP 7 APWB 1 APRB 7 REAL PHU 4 LLI 0 _CAA_MAX_CUT_FEED=5001")]
     [DataRow("DEF NCK REAL PHY 2 GD_DOCUMENTED_UNIT")]

@@ -23,7 +23,7 @@ After the workspace you have opened is completely parsed, you will get some diag
 ![diagnostics](images/diagnostic_feature.gif)
 
 ## Getting started
-Make sure you have a .NET runtime with version 6.0 or newer. if not, you can get it from the official [microsoft download page](https://dotnet.microsoft.com/en-us/download/dotnet/6.0).
+Lance 2.0 includes its own .NET 10 runtime. No separate .NET installation is required.
 
 ## Extension Settings
 To change the colors of the syntax highlighting you can [change the theme](https://code.visualstudio.com/docs/getstarted/themes) or [configure some color customizations](https://code.visualstudio.com/docs/getstarted/themes#_customizing-a-color-theme).
@@ -37,5 +37,5 @@ There are also some settings for a customizable preprocessor. It can be used to 
 ## Known Issues
 
 - macros can only have a literal, a command or a combination of commands which would be valid on a line alone as values.
-If you have any problems, see if there is a related issue or write me one on [github](https://github.com/Nuaduwodan/lance/issues).
+If you have any problems, see if there is a related issue or write one on [github](https://github.com/Krualten/lance/issues).
 If you write me a ticket, it helps me a lot if you add the contents of the Lance output console to it. You can find that under "View" -> "Output" and then select "Lance" in the dropdown in the bottom right.

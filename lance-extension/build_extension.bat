@@ -1,1 +1,2 @@
-vsce package
+@echo off
+npx @vscode/vsce package

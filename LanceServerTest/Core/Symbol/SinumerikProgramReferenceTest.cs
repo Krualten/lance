@@ -21,7 +21,7 @@ public class SinumerikProgramReferenceTest
         Assert.AreEqual(".spf", fileExtension);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("TEST_HELPER", "TEST_HELPER")]
     [DataRow("TEST_HELPER.SPF", "TEST_HELPER")]
     [DataRow("_N_TEST_HELPER_SPF", "TEST_HELPER")]

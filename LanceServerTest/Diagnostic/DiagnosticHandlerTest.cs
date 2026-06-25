@@ -838,7 +838,7 @@ M30
         }
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("cus.dir")]
     [DataRow("cma.dir")]
     [DataRow("cst.dir")]

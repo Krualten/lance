@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-06-25
+
+### Changed
+
+- migrated the language server and test suite from .NET 6 to .NET 10 LTS.
+- packaged the Windows x64 language server as a self-contained application so extension users no longer need a separately installed .NET runtime.
+- moved the bundled server from `server/net6.0` to `server/win-x64`.
+- updated JSON-RPC and test dependencies and removed the unused legacy WCF dependency.
+- updated build scripts, CI and repository metadata for the new runtime and fork.
+
 ## [1.1.0] - 2026-06-19
 
 ### Added

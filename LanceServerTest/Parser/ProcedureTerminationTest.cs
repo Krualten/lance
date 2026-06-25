@@ -9,7 +9,7 @@ namespace LanceServerTest.Parser;
 [TestClass]
 public class ProcedureTerminationTest
 {
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("RET")]
     [DataRow("M17")]
     [DataRow("M30")]

@@ -10,7 +10,7 @@ namespace LanceServerTest.Parser;
 [TestClass]
 public class FrameExpressionTest
 {
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("$P_PFRAME=CTRANS(X,10,Y,20,Z,30)")]
     [DataRow("$P_UIFR[1]=CTRANS(X,0,Y,0,Z,0):CROT(X,0,Y,0,Z,0)")]
     [DataRow("$P_IFRAME=CTRANS(X,1,Y,2,Z,3):CROT(Z,4):CROT(X,5)")]
@@ -29,7 +29,7 @@ public class FrameExpressionTest
             string.Join(Environment.NewLine, parserResult.Diagnostics.Select(diagnostic => diagnostic.Message)));
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("CTRANS(X,1)")]
     [DataRow("CMIRROR(X,1)")]
     [DataRow("CSCALE()")]

@@ -10,7 +10,7 @@ namespace LanceServerTest.Parser;
 [TestClass]
 public class NcAddressTest
 {
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("T0")]
     [DataRow("T=savedToolName")]
     [DataRow("T=\"\"")]
@@ -34,7 +34,7 @@ public class NcAddressTest
             string.Join(Environment.NewLine, result.Diagnostics.Select(diagnostic => diagnostic.Message)));
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("L601", "L601")]
     [DataRow("l611", "l611")]
     public void NumberedSubprogramCreatesProcedureUse(string block, string expectedIdentifier)

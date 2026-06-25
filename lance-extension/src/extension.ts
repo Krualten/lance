@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import {
     LanguageClient,
     LanguageClientOptions,
@@ -12,7 +13,7 @@ const languageID = "sinumeriknc";
 // This method is called when your extension is activated
 export function activate(context: vscode.ExtensionContext) {
 
-    var fn = __dirname + '/../server/net6.0/LanceServer.exe';
+    const fn = context.asAbsolutePath(path.join('server', 'win-x64', 'LanceServer.exe'));
     const server: Executable =
     {
         command: fn,
@@ -22,7 +23,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     const languageConfig = vscode.workspace.getConfiguration("files.associations");
     let fileExtensions = ["*.def","*.mpf","*.spf"];
-    let moreExtensions = Object.keys(languageConfig)
+    let moreExtensions = Object.keys(languageConfig);
 
     moreExtensions.forEach(element => {
         if (languageConfig[element] === languageID){
